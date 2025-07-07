@@ -1,17 +1,17 @@
-version: '3.8'
-
 services:
   app:
     build: ./docker/php
+    container_name: app
     volumes:
       - .:/var/www/html
     environment:
       - PHP_DISPLAY_ERRORS=on
     depends_on:
-      - db
+      - mariadb
   
   webserver:
     image: nginx:alpine
+    container_name: nginx
     ports:
       - "8080:80"
     volumes:
@@ -20,15 +20,20 @@ services:
     depends_on:
       - app
     
-  db:
-    image: mariadb:10.5
+  mariadb:
+    image: mariadb:10.11
     restart: always
+    container_name: mariadb
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: camagru
+      - MARIADB_ROOT_PASSWORD=${DB_PASS}
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASS}
     volumes:
-      - db_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "${DB_PORT}:3306"
 
-# ✅ Déclaration des volumes ici
 volumes:
-  db_data:
+  mariadb_data:
