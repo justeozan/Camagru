@@ -1,3 +1,5 @@
+
+
 services:
   app:
     build: ./docker/php
@@ -8,7 +10,7 @@ services:
       - PHP_DISPLAY_ERRORS=on
     depends_on:
       - mariadb
-  
+
   webserver:
     image: nginx:alpine
     container_name: nginx
@@ -19,7 +21,7 @@ services:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
-    
+
   mariadb:
     image: mariadb:10.11
     restart: always
@@ -33,7 +35,14 @@ services:
       - mariadb_data:/var/lib/mysql
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     ports:
-      - "${DB_PORT}:3306"
+      - "${DB_PORT:-3306}:3306"
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "8025:8025"  # Interface web
+      - "1025:1025"  # Port SMTP utilisé par PHP
 
 volumes:
   mariadb_data:
