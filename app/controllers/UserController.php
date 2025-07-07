@@ -110,4 +110,17 @@ class UserController extends Controller {
 			exit();
 		}
 	}
+
+	public function account()
+	{
+		// if (!isset($_SESSION['user_id'])) {
+		// 	header("Location: /user/login");
+		// 	exit();
+		// }
+
+		// $userModel = $this->model('User');
+		// $user = $userModel->getById($_SESSION['user_id']);
+
+		require_once '../app/views/account.php';
+	}
 }
