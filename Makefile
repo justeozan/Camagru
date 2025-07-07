@@ -5,7 +5,7 @@ DC = docker compose
 # Paths
 APP_DIR = ./app
 CONF_DIR = ./config
-DB_DIR = ./database
+SQL_DIR = ./sql
 PUBLIC_DIR = ./public
 DOCKER_DIR = ./docker
 
@@ -31,7 +31,7 @@ help:
 	@echo "  $(GREEN)up$(RESET)       - Start the application"
 	@echo "  $(GREEN)down$(RESET)     - Stop the application"
 	@echo "  $(GREEN)build$(RESET)    - Build Docker containers"
-	@echo "  $(GREEN)migrate$(RESET)  - Run database migrations"
+	@echo "  $(GREEN)init-db$(RESET)  - Initialize database schema"
 	@echo "  $(GREEN)logs$(RESET)     - Show container logs"
 	@echo "  $(GREEN)clean$(RESET)    - Clean up containers and images"
 
@@ -51,10 +51,10 @@ build:
 
 re:
 	@make -j4 down
-	@make -j4 up
+	@make -j4 all
 
-migrate:
-	@$(DC) exec camagru_app php $(DB_DIR)/migrate.php
+init-db:
+	@$(DC) exec app php $(SQL_DIR)/init.php -u${DB_USER} -p${DB_PASS}
 
 clean:
 	@$(DC) down -v --rmi all --remove-orphans
