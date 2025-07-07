@@ -11,7 +11,7 @@ services:
       - db
   
   webserver:
-    images: nginx:alpine
+    image: nginx:alpine
     ports:
       - "8080:80"
     volumes:
@@ -29,3 +29,6 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+# ✅ Déclaration des volumes ici
+volumes:
+  db_data:
