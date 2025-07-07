@@ -1,6 +1,6 @@
 <?php
 
-class UserController {
+class UserController extends Controller {
 
 	public function register()
 	{
@@ -9,7 +9,7 @@ class UserController {
 
 	public function registerSubmit()
 	{
-		if ($_SERVER['REQUEST_METHOD'] == 'POST'){
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$username = trim($_POST['username']);
 			$email = trim($_POST['email']);
 			$password = trim($_POST['password']);
@@ -34,26 +34,33 @@ class UserController {
 
 			$userModel->create($username, $email, $hashedPassword, $token);
 
-			// Envoi d'un email de vérification
-			require_once "../app/utils/Mailer.php"; // ou chemin relatif correct selon ton projet
-
+			// 🔥 Envoi du mail de vérification via mail()
 			$link = "http://localhost:8080/user/verify/$token";
 			$subject = "Confirme ton inscription à Camagru";
 
-			$htmlContent = "
+			$message = "
+			<html><body>
 				<h1>Bienvenue sur Camagru !</h1>
-				<p>Merci pour ton inscription, $username.</p>
-				<p>Confirme ton adresse e-mail en cliquant sur le lien ci-dessous :</p>
-				<a href='$link'>$link</a>
-				<p>Si tu n'as pas demandé cette inscription, ignore simplement cet e-mail.</p>
+				<p>Merci pour ton inscription, <strong>$username</strong>.</p>
+				<p>Pour confirmer ton compte, clique ici :</p>
+				<p><a href=\"$link\">$link</a></p>
+				<p>Si tu n'as pas demandé cette inscription, ignore ce message.</p>
+			</body></html>
 			";
 
-			Mailer::send($email, $subject, $htmlContent);
+			$headers  = "MIME-Version: 1.0\r\n";
+			$headers .= "Content-type: text/html; charset=UTF-8\r\n";
+			$headers .= "From: Camagru <noreply@camagru.local>\r\n";
 
-
-			echo "Compte créé ! Vérifie ta boîte mail pour activer ton compte.";
+			// ✅ Appel à mail() — fonctionne avec MailHog dans Docker
+			if (mail($email, $subject, $message, $headers)) {
+				echo "Compte créé ! Vérifie ta boîte mail pour activer ton compte.";
+			} else {
+				echo "Erreur lors de l'envoi du mail.";
+			}
 		}
 	}
+
 
 	public function verify($token) {
 		$userModel = $this->model('User');

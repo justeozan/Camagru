@@ -5,12 +5,15 @@
 CREATE DATABASE IF NOT EXISTS camagru;
 USE camagru;
 
--- Users table
+-- Table des utilisateurs
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    is_verified TINYINT(1) DEFAULT 0,
+    verify_token VARCHAR(255),
+    notify_on_comment TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

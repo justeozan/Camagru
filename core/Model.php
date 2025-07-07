@@ -1,13 +1,19 @@
 <?php
 
+
 class Model {
     protected $db;
 
     public function __construct() {
         try {
-            $this->db = new PDO("mysql:host=db;dbname=camagru", "root", "root");
+            $host = $_ENV['DB_HOST'] ?? 'db';
+            $dbname = $_ENV['DB_NAME'] ?? 'camagru';
+            $user = $_ENV['DB_USER'] ?? 'root';
+            $pass = $_ENV['DB_PASSWORD'] ?? 'root';
+
+            $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
+            $this->db = new PDO($dsn, $user, $pass);
             $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             die("Erreur connexion BDD : " . $e->getMessage());
         }
