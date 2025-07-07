@@ -81,6 +81,33 @@ class UserController extends Controller {
 
 	public function loginSubmit()
 	{
-		// traitement du formulaire
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$email = trim($_POST['email']);
+			$password = trim($_POST['password']);
+
+			$userModel = $this->model('User');
+			$user = $userModel->getByEmail($email);
+
+			if (!$user) {
+				die("Utilisateur non trouvé");
+			}
+
+			if (!password_verify($password, $user['password'])) {
+				die("Mot de passe incorrect");
+			}
+
+			if (!$user['is_verified']) {
+				die("Compte non vérifié. Vérifie ta boîte mail.");
+			}
+
+			session_start();
+
+			$_SESSION['user_id'] = $user['id'];
+			$_SESSION['username'] = $user['username'];
+			$_SESSION['email'] = $user['email'];
+
+			header("Location: /");
+			exit();
+		}
 	}
 }
