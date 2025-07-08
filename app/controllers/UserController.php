@@ -39,13 +39,39 @@ class UserController extends Controller {
 			$subject = "Confirme ton inscription à Camagru";
 
 			$message = "
-			<html><body>
-				<h1>Bienvenue sur Camagru !</h1>
-				<p>Merci pour ton inscription, <strong>$username</strong>.</p>
-				<p>Pour confirmer ton compte, clique ici :</p>
-				<p><a href=\"$link\">$link</a></p>
-				<p>Si tu n'as pas demandé cette inscription, ignore ce message.</p>
-			</body></html>
+			<html>
+			<head>
+				<meta charset='UTF-8'>
+				<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+				<script src='https://cdn.tailwindcss.com'></script>
+				<link rel='preconnect' href='https://fonts.googleapis.com'>
+				<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+				<link href='https://fonts.googleapis.com/css2?family=Pacifico&display=swap' rel='stylesheet'>
+				<script>
+					tailwind.config = {
+						theme: {
+							extend: {
+								fontFamily: {
+									camagru: ['Pacifico', 'cursive'],
+								}
+							}
+						}
+					}
+				</script>
+			</head>
+			<body style='margin: 0; padding: 20px; background-color: #f9fafb; font-family: system-ui, sans-serif;'>
+				<div style='max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 32px;'>
+					<h1 style='font-family: Pacifico, cursive; font-size: 36px; text-align: center; color: #2563eb; margin: 0 0 16px 0;'>CAMAGRU</h1>
+					<h2 style='font-size: 24px; font-weight: 600; text-align: center; color: #111827; margin: 0 0 8px 0;'>Bienvenue !</h2>
+					<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Merci pour ton inscription, <strong style='color: #111827;'>$username</strong>.</p>
+					<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Pour confirmer ton compte, clique sur le bouton ci-dessous :</p>
+					<div style='text-align: center; margin: 32px 0;'>
+						<a href='$link' style='display: inline-block; background-color: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background-color 0.2s;'>Confirmer mon compte</a>
+					</div>
+					<p style='text-align: center; color: #9ca3af; font-size: 14px; margin: 24px 0 0 0;'>Si tu n'as pas demandé cette inscription, ignore ce message.</p>
+				</div>
+			</body>
+			</html>
 			";
 
 			$headers  = "MIME-Version: 1.0\r\n";
@@ -117,7 +143,7 @@ class UserController extends Controller {
 	}
 
 	public function logout(){
-		session_start();
+		// session_start();
 
 		// Supprimer toutes les variables de session
 		$_SESSION = [];
@@ -168,14 +194,42 @@ class UserController extends Controller {
 				$subject = "Réinitialisation de votre mot de passe - Camagru";
 
 				$message = "
-				<html><body>
-					<h1>Réinitialisation de mot de passe</h1>
-					<p>Vous avez demandé la réinitialisation de votre mot de passe sur Camagru.</p>
-					<p>Pour définir un nouveau mot de passe, cliquez sur le lien ci-dessous :</p>
-					<p><a href=\"$link\">$link</a></p>
-					<p><strong>Ce lien expirera dans 1 heure.</strong></p>
-					<p>Si vous n'avez pas demandé cette réinitialisation, ignorez ce message.</p>
-				</body></html>
+				<html>
+				<head>
+					<meta charset='UTF-8'>
+					<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+					<script src='https://cdn.tailwindcss.com'></script>
+					<link rel='preconnect' href='https://fonts.googleapis.com'>
+					<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+					<link href='https://fonts.googleapis.com/css2?family=Pacifico&display=swap' rel='stylesheet'>
+					<script>
+						tailwind.config = {
+							theme: {
+								extend: {
+									fontFamily: {
+										camagru: ['Pacifico', 'cursive'],
+									}
+								}
+							}
+						}
+					</script>
+				</head>
+				<body style='margin: 0; padding: 20px; background-color: #f9fafb; font-family: system-ui, sans-serif;'>
+					<div style='max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 32px;'>
+						<h1 style='font-family: Pacifico, cursive; font-size: 36px; text-align: center; color: #2563eb; margin: 0 0 16px 0;'>CAMAGRU</h1>
+						<h2 style='font-size: 24px; font-weight: 600; text-align: center; color: #111827; margin: 0 0 8px 0;'>Réinitialisation de mot de passe</h2>
+						<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Vous avez demandé la réinitialisation de votre mot de passe sur Camagru.</p>
+						<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Pour définir un nouveau mot de passe, cliquez sur le bouton ci-dessous :</p>
+						<div style='text-align: center; margin: 32px 0;'>
+							<a href='$link' style='display: inline-block; background-color: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background-color 0.2s;'>Réinitialiser mon mot de passe</a>
+						</div>
+						<div style='background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin: 24px 0;'>
+							<p style='margin: 0; color: #92400e; font-size: 14px; text-align: center;'><strong>Ce lien expirera dans 1 heure.</strong></p>
+						</div>
+						<p style='text-align: center; color: #9ca3af; font-size: 14px; margin: 24px 0 0 0;'>Si vous n'avez pas demandé cette réinitialisation, ignorez ce message.</p>
+					</div>
+				</body>
+				</html>
 				";
 
 				$headers  = "MIME-Version: 1.0\r\n";
