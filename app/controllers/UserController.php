@@ -142,4 +142,98 @@ class UserController extends Controller {
 
 		require_once '../app/views/account.php';
 	}
+
+	public function resetPassword()
+	{
+		require_once '../app/views/resetPassword.php';
+	}
+
+	public function resetPasswordSubmit()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$email = trim($_POST['email']);
+
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				die("Email invalide");
+			}
+
+			$userModel = $this->model('User');
+			$resetToken = $userModel->generateResetToken($email);
+
+			if ($resetToken) {
+				// Envoi du mail de réinitialisation
+				$link = "http://localhost:8080/user/newPassword/$resetToken";
+				$subject = "Réinitialisation de votre mot de passe - Camagru";
+
+				$message = "
+				<html><body>
+					<h1>Réinitialisation de mot de passe</h1>
+					<p>Vous avez demandé la réinitialisation de votre mot de passe sur Camagru.</p>
+					<p>Pour définir un nouveau mot de passe, cliquez sur le lien ci-dessous :</p>
+					<p><a href=\"$link\">$link</a></p>
+					<p><strong>Ce lien expirera dans 1 heure.</strong></p>
+					<p>Si vous n'avez pas demandé cette réinitialisation, ignorez ce message.</p>
+				</body></html>
+				";
+
+				$headers  = "MIME-Version: 1.0\r\n";
+				$headers .= "Content-type: text/html; charset=UTF-8\r\n";
+				$headers .= "From: Camagru <noreply@camagru.local>\r\n";
+
+				if (mail($email, $subject, $message, $headers)) {
+					echo "<div class='alert-success'>Un email de réinitialisation a été envoyé à votre adresse. Vérifiez votre boîte mail.</div>";
+				} else {
+					echo "<div class='alert-error'>Erreur lors de l'envoi du mail.</div>";
+				}
+			} else {
+				echo "<div class='alert-error'>Aucun compte associé à cette adresse email.</div>";
+			}
+		}
+	}
+
+	public function newPassword($token = null)
+	{
+		if (!$token) {
+			header("Location: /user/login");
+			exit();
+		}
+
+		$userModel = $this->model('User');
+		$user = $userModel->verifyResetToken($token);
+
+		if (!$user) {
+			echo "<div class='alert-error'>Lien de réinitialisation invalide ou expiré.</div>";
+			echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
+			return;
+		}
+
+		require_once '../app/views/newPassword.php';
+	}
+
+	public function newPasswordSubmit()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$token = trim($_POST['token']);
+			$password = trim($_POST['password']);
+			$confirmPassword = trim($_POST['confirm_password']);
+
+			if (strlen($password) < 8) {
+				die("Mot de passe trop court (min 8 caractères).");
+			}
+
+			if ($password !== $confirmPassword) {
+				die("Les mots de passe ne correspondent pas.");
+			}
+
+			$userModel = $this->model('User');
+			
+			if ($userModel->resetPassword($token, $password)) {
+				echo "<div class='alert-success'>Votre mot de passe a été réinitialisé avec succès !</div>";
+				echo "<a href='/user/login'>Se connecter avec le nouveau mot de passe</a>";
+			} else {
+				echo "<div class='alert-error'>Erreur lors de la réinitialisation. Le lien a peut-être expiré.</div>";
+				echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
+			}
+		}
+	}
 }

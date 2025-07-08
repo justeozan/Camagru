@@ -27,6 +27,13 @@
       </button>
     </form>
 
+            <!-- Lien mot de passe oublié -->
+            <div class="text-center mt-4">
+                <a href="/user/resetPassword" class="text-sm text-blue-600 hover:underline">
+                    Mot de passe oublié ?
+                </a>
+            </div>
+
             <p class="text-sm text-center text-gray-600 mt-6">
                 Pas encore inscrit ? <a href="/user/register" class="text-blue-600 hover:underline font-medium">Créer un compte</a>
             </p>
