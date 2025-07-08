@@ -54,7 +54,16 @@ class UserController extends Controller {
 
 			// ✅ Appel à mail() — fonctionne avec MailHog dans Docker
 			if (mail($email, $subject, $message, $headers)) {
-				echo "Compte créé ! Vérifie ta boîte mail pour activer ton compte.";
+				// Start session and set user data
+				require_once '../app/models/User.php';
+				$newUser = $userModel->getByEmail($email);
+				$_SESSION['user_id'] = $newUser['id'];
+				$_SESSION['username'] = $newUser['username'];
+				$_SESSION['email'] = $newUser['email'];
+				
+				// Redirect to confirm page
+				header("Location: /user/confirm");
+				exit();
 			} else {
 				echo "Erreur lors de l'envoi du mail.";
 			}
@@ -88,25 +97,21 @@ class UserController extends Controller {
 			$userModel = $this->model('User');
 			$user = $userModel->getByEmail($email);
 
-			if (!$user) {
+			if (!$user)
 				die("Utilisateur non trouvé");
-			}
 
-			if (!password_verify($password, $user['password'])) {
+			if (!password_verify($password, $user['password']))
 				die("Mot de passe incorrect");
-			}
-
-			if (!$user['is_verified']) {
-				die("Compte non vérifié. Vérifie ta boîte mail.");
-			}
-
-			session_start();
 
 			$_SESSION['user_id'] = $user['id'];
 			$_SESSION['username'] = $user['username'];
 			$_SESSION['email'] = $user['email'];
 
-			header("Location: /");
+			if (!$user['is_verified']) {
+				header("Location: /user/confirm");
+			} else {
+				header("Location: /");
+			}
 			exit();
 		}
 	}
@@ -132,13 +137,10 @@ class UserController extends Controller {
 
 	public function account()
 	{
-		// if (!isset($_SESSION['user_id'])) {
-		// 	header("Location: /user/login");
-		// 	exit();
-		// }
+		$this->requireVerify(); // Require verified user to access account
 
-		// $userModel = $this->model('User');
-		// $user = $userModel->getById($_SESSION['user_id']);
+		$userModel = $this->model('User');
+		$user = $userModel->getById($_SESSION['user_id']);
 
 		require_once '../app/views/account.php';
 	}
@@ -235,5 +237,17 @@ class UserController extends Controller {
 				echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
 			}
 		}
+	}
+
+	public function confirm()
+	{
+		$this->requireAuth();
+
+		$userModel = $this->model('User');
+		$user = $userModel->getById($_SESSION['user_id']);
+		if (!$user) {
+			die("Utilisateur non trouvé");
+		}
+		require_once '../app/views/confirm.php';
 	}
 }
