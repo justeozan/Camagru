@@ -98,4 +98,48 @@ class User extends Model {
 		
 		return $stmt->execute([$hashedPassword, $user['id']]);
 	}
+	
+	// Fonction pour vérifier le mot de passe actuel d'un utilisateur
+	public function verifyCurrentPassword($userId, $currentPassword)
+	{
+		$stmt = $this->db->prepare("SELECT password FROM users WHERE id = ?");
+		$stmt->execute([$userId]);
+		$user = $stmt->fetch(PDO::FETCH_ASSOC);
+		
+		if ($user) {
+			return password_verify($currentPassword, $user['password']);
+		}
+		
+		return false;
+	}
+	
+	// Fonction pour mettre à jour le mot de passe d'un utilisateur connecté
+	public function updatePassword($userId, $newPassword)
+	{
+		$hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+		$stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+		
+		return $stmt->execute([$hashedPassword, $userId]);
+	}
+	
+	// Fonction pour mettre à jour l'avatar d'un utilisateur
+	public function updateAvatar($userId, $avatarPath)
+	{
+		$stmt = $this->db->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+		return $stmt->execute([$avatarPath, $userId]);
+	}
+	
+	// Fonction pour mettre à jour le profil d'un utilisateur
+	public function updateProfile($userId, $username, $email)
+	{
+		$stmt = $this->db->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
+		return $stmt->execute([$username, $email, $userId]);
+	}
+	
+	// Fonction pour mettre à jour les préférences d'un utilisateur
+	public function updatePreferences($userId, $publicProfile, $emailNotifications)
+	{
+		$stmt = $this->db->prepare("UPDATE users SET public_profile = ?, email_notifications = ? WHERE id = ?");
+		return $stmt->execute([$publicProfile, $emailNotifications, $userId]);
+	}
 }
