@@ -88,17 +88,14 @@ class UserController extends Controller {
 			$userModel = $this->model('User');
 			$user = $userModel->getByEmail($email);
 
-			if (!$user) {
+			if (!$user)
 				die("Utilisateur non trouvé");
-			}
 
-			if (!password_verify($password, $user['password'])) {
+			if (!password_verify($password, $user['password']))
 				die("Mot de passe incorrect");
-			}
 
-			if (!$user['is_verified']) {
+			if (!$user['is_verified'])
 				die("Compte non vérifié. Vérifie ta boîte mail.");
-			}
 
 			session_start();
 
@@ -126,16 +123,16 @@ class UserController extends Controller {
 
 	public function confirm()
 	{
-		// if (!isset($_SESSION['user_id'])) {
-		// 	header("Location: /user/login");
-		// 	exit();
-		// }
+		if (!isset($_SESSION['user_id'])) {
+			header("Location: /user/login");
+			exit();
+		}
 
-		// $userModel = $this->model('User');
-		// $user = $userModel->getById($_SESSION['user_id']);
-		// if (!$user) {
-		// 	die("Utilisateur non trouvé");
-		// }
+		$userModel = $this->model('User');
+		$user = $userModel->getById($_SESSION['user_id']);
+		if (!$user) {
+			die("Utilisateur non trouvé");
+		}
 		require_once '../app/views/confirm.php';
 	}
 }
