@@ -12,7 +12,7 @@
             <h1 class="text-4xl font-camagru text-center text-blue-600 mb-2">
                 CAMAGRU
             </h1>
-            <p class="text-center text-gray-600 mb-8">Créer un compte</p>
+            <p class="text-center text-gray-600 my-4">Créer un compte</p>
             
             <form action="/user/registerSubmit" method="POST" class="space-y-4">
                 <div>
