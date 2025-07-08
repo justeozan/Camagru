@@ -48,4 +48,43 @@ class User extends Model {
 		}
 		return false;
 	}
+
+	// Fonction pour générer un token de réinitialisation de mot de passe
+	public function generateResetToken($email)
+	{
+		$user = $this->getByEmail($email);
+		if (!$user) {
+			return false;
+		}
+
+		$resetToken = bin2hex(random_bytes(32));
+		$expiry = date('Y-m-d H:i:s', strtotime('+1 hour')); // Token valide 1 heure
+
+		$stmt = $this->db->prepare("UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?");
+		$stmt->execute([$resetToken, $expiry, $email]);
+
+		return $resetToken;
+	}
+
+	// Fonction pour vérifier la validité d'un token de réinitialisation
+	public function verifyResetToken($token)
+	{
+		$stmt = $this->db->prepare("SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()");
+		$stmt->execute([$token]);
+		return $stmt->fetch(PDO::FETCH_ASSOC);
+	}
+
+	// Fonction pour réinitialiser le mot de passe
+	public function resetPassword($token, $newPassword)
+	{
+		$user = $this->verifyResetToken($token);
+		if (!$user) {
+			return false;
+		}
+
+		$hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+		$stmt = $this->db->prepare("UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?");
+		
+		return $stmt->execute([$hashedPassword, $user['id']]);
+	}
 }

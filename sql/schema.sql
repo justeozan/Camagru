@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     is_verified TINYINT(1) DEFAULT 0,
     verify_token VARCHAR(255),
+    reset_token VARCHAR(255),
+    reset_token_expiry TIMESTAMP NULL,
     notify_on_comment TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
