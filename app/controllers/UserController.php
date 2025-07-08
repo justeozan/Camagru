@@ -132,6 +132,9 @@ class UserController extends Controller {
 			$_SESSION['user_id'] = $user['id'];
 			$_SESSION['username'] = $user['username'];
 			$_SESSION['email'] = $user['email'];
+			
+			// Store full user data for easy access
+			$_SESSION['user'] = $user;
 
 			if (!$user['is_verified']) {
 				header("Location: /user/confirm");
@@ -167,6 +170,9 @@ class UserController extends Controller {
 
 		$userModel = $this->model('User');
 		$user = $userModel->getById($_SESSION['user_id']);
+
+		// Store user data in session for easy access in templates
+		$_SESSION['user'] = $user;
 
 		require_once '../app/views/account.php';
 	}
@@ -290,6 +296,299 @@ class UserController extends Controller {
 				echo "<div class='alert-error'>Erreur lors de la réinitialisation. Le lien a peut-être expiré.</div>";
 				echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
 			}
+		}
+	}
+
+	public function changePassword()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$userModel = $this->model('User');
+			
+			// Check if this is a password reset with token or password change from account page
+			if (isset($_POST['token'])) {
+				// Password reset flow
+				$token = trim($_POST['token']);
+				$password = trim($_POST['password']);
+				$confirmPassword = trim($_POST['confirm_password']);
+
+				if (strlen($password) < 8) {
+					die("Mot de passe trop court (min 8 caractères).");
+				}
+
+				if ($password !== $confirmPassword) {
+					die("Les mots de passe ne correspondent pas.");
+				}
+				
+				if ($userModel->resetPassword($token, $password)) {
+					echo "<div class='alert-success'>Votre mot de passe a été réinitialisé avec succès !</div>";
+					echo "<a href='/user/login'>Se connecter avec le nouveau mot de passe</a>";
+				} else {
+					echo "<div class='alert-error'>Erreur lors de la réinitialisation. Le lien a peut-être expiré.</div>";
+					echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
+				}
+			} else {
+				// Password change from account page
+				if (!isset($_SESSION['user_id'])) {
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Vous devez être connecté pour changer votre mot de passe.'
+					];
+					header('Location: /user/login');
+					exit();
+				}
+
+				$currentPassword = trim($_POST['current_password']);
+				$newPassword = trim($_POST['new_password']);
+				$confirmPassword = trim($_POST['confirm_password']);
+
+				// Validation
+				if (strlen($newPassword) < 8) {
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Le nouveau mot de passe doit contenir au moins 8 caractères.'
+					];
+					header('Location: /user/account');
+					exit();
+				}
+
+				if ($newPassword !== $confirmPassword) {
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Les nouveaux mots de passe ne correspondent pas.'
+					];
+					header('Location: /user/account');
+					exit();
+				}
+
+				// Verify current password
+				if (!$userModel->verifyCurrentPassword($_SESSION['user_id'], $currentPassword)) {
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Le mot de passe actuel est incorrect.'
+					];
+					header('Location: /user/account');
+					exit();
+				}
+
+				// Update password
+				if ($userModel->updatePassword($_SESSION['user_id'], $newPassword)) {
+					$_SESSION['toast'] = [
+						'type' => 'success',
+						'message' => 'Votre mot de passe a été modifié avec succès !'
+					];
+				} else {
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Une erreur est survenue lors de la modification du mot de passe.'
+					];
+				}
+
+				header('Location: /user/account');
+				exit();
+			}
+		}
+	}
+
+	public function updateAvatar()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			if (!isset($_SESSION['user_id'])) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Vous devez être connecté pour modifier votre avatar.'
+				];
+				header('Location: /user/login');
+				exit();
+			}
+
+			// Check if file was uploaded
+			if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Aucune image sélectionnée ou erreur lors du téléchargement.'
+				];
+				header('Location: /user/account');
+				exit();
+			}
+
+			$file = $_FILES['avatar'];
+			
+			// Validate file type
+			$allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+			if (!in_array($file['type'], $allowedTypes)) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Format d\'image non supporté. Utilisez JPG, PNG, GIF ou WebP.'
+				];
+				header('Location: /user/account');
+				exit();
+			}
+
+			// Validate file size (max 5MB)
+			if ($file['size'] > 5 * 1024 * 1024) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'L\'image est trop grande. Taille maximum: 5MB.'
+				];
+				header('Location: /user/account');
+				exit();
+			}
+
+			// Create uploads directory if it doesn't exist
+			$uploadDir = '../public/uploads/avatars/';
+			if (!file_exists($uploadDir)) {
+				mkdir($uploadDir, 0755, true);
+			}
+
+			// Generate unique filename
+			$fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+			$fileName = 'avatar_' . $_SESSION['user_id'] . '_' . time() . '.' . $fileExtension;
+			$filePath = $uploadDir . $fileName;
+			$webPath = '/uploads/avatars/' . $fileName;
+
+			// Move uploaded file
+			if (move_uploaded_file($file['tmp_name'], $filePath)) {
+				$userModel = $this->model('User');
+				
+				// Delete old avatar if exists (check both session and database)
+				if (!empty($_SESSION['user']['avatar'])) {
+					$oldAvatarPath = '../public' . $_SESSION['user']['avatar'];
+					if (file_exists($oldAvatarPath)) {
+						unlink($oldAvatarPath);
+					}
+				}
+				
+				// Update database with web path
+				if ($userModel->updateAvatar($_SESSION['user_id'], $webPath)) {
+					$_SESSION['user']['avatar'] = $webPath;
+					$_SESSION['toast'] = [
+						'type' => 'success',
+						'message' => 'Votre photo de profil a été mise à jour avec succès !'
+					];
+				} else {
+					// Delete uploaded file if database update failed
+					unlink($filePath);
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Erreur lors de la mise à jour de la base de données.'
+					];
+				}
+			} else {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Erreur lors de l\'enregistrement de l\'image.'
+				];
+			}
+
+			header('Location: /user/account');
+			exit();
+		}
+	}
+
+	public function updateProfile()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			if (!isset($_SESSION['user_id'])) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Vous devez être connecté pour modifier votre profil.'
+				];
+				header('Location: /user/login');
+				exit();
+			}
+		$username = trim($_POST['username']);
+		$email = trim($_POST['email']);
+
+		// Validation
+		if (empty($username) || empty($email)) {
+			$_SESSION['toast'] = [
+				'type' => 'error',
+				'message' => 'Le nom d\'utilisateur et l\'email sont obligatoires.'
+			];
+			header('Location: /user/account');
+			exit();
+		}
+
+		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+			$_SESSION['toast'] = [
+				'type' => 'error',
+				'message' => 'L\'adresse email n\'est pas valide.'
+			];
+			header('Location: /user/account');
+			exit();
+		}
+
+		$userModel = $this->model('User');
+		
+		// Check if email is already taken by another user
+		$existingUser = $userModel->getByEmail($email);
+		if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) {
+			$_SESSION['toast'] = [
+				'type' => 'error',
+				'message' => 'Cette adresse email est déjà utilisée par un autre compte.'
+			];
+			header('Location: /user/account');
+			exit();
+		}
+
+		// Update profile
+		if ($userModel->updateProfile($_SESSION['user_id'], $username, $email)) {
+			// Update session data
+			$_SESSION['user']['username'] = $username;
+			$_SESSION['user']['email'] = $email;
+				
+				$_SESSION['toast'] = [
+					'type' => 'success',
+					'message' => 'Votre profil a été mis à jour avec succès !'
+				];
+			} else {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Une erreur est survenue lors de la mise à jour du profil.'
+				];
+			}
+
+			header('Location: /user/account');
+			exit();
+		}
+	}
+
+	public function updatePreferences()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			if (!isset($_SESSION['user_id'])) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Vous devez être connecté pour modifier vos préférences.'
+				];
+				header('Location: /user/login');
+				exit();
+			}
+
+			$publicProfile = isset($_POST['public_profile']) ? 1 : 0;
+			$emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
+
+			$userModel = $this->model('User');
+			
+			// Update preferences
+			if ($userModel->updatePreferences($_SESSION['user_id'], $publicProfile, $emailNotifications)) {
+				// Update session data
+				$_SESSION['user']['public_profile'] = $publicProfile;
+				$_SESSION['user']['email_notifications'] = $emailNotifications;
+				
+				$_SESSION['toast'] = [
+					'type' => 'success',
+					'message' => 'Vos préférences ont été mises à jour avec succès !'
+				];
+			} else {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Une erreur est survenue lors de la mise à jour des préférences.'
+				];
+			}
+
+			header('Location: /user/account');
+			exit();
 		}
 	}
 
