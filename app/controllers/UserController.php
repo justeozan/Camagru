@@ -56,7 +56,6 @@ class UserController extends Controller {
 			if (mail($email, $subject, $message, $headers)) {
 				// Start session and set user data
 				require_once '../app/models/User.php';
-				session_start();
 				$newUser = $userModel->getByEmail($email);
 				$_SESSION['user_id'] = $newUser['id'];
 				$_SESSION['username'] = $newUser['username'];
@@ -103,7 +102,6 @@ class UserController extends Controller {
 
 			if (!password_verify($password, $user['password']))
 				die("Mot de passe incorrect");
-			session_start();
 
 			$_SESSION['user_id'] = $user['id'];
 			$_SESSION['username'] = $user['username'];
@@ -120,11 +118,7 @@ class UserController extends Controller {
 
 	public function account()
 	{
-		session_start();
-		if (!isset($_SESSION['user_id'])) {
-			header("Location: /user/login");
-			exit();
-		}
+		$this->requireVerify(); // Require verified user to access account
 
 		$userModel = $this->model('User');
 		$user = $userModel->getById($_SESSION['user_id']);
@@ -134,11 +128,7 @@ class UserController extends Controller {
 
 	public function confirm()
 	{
-		session_start();
-		if (!isset($_SESSION['user_id'])) {
-			header("Location: /user/login");
-			exit();
-		}
+		$this->requireAuth();
 
 		$userModel = $this->model('User');
 		$user = $userModel->getById($_SESSION['user_id']);
