@@ -3,7 +3,10 @@
 class Controller {
     
     public function __construct() {
-        session_start();
+        // Démarrer la session seulement si elle n'est pas déjà active
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
     }
 
     protected function requireAuth() {
@@ -30,5 +33,11 @@ class Controller {
     public function model($model) {
         require_once "../app/models/$model.php";
         return new $model();
+    }
+
+    // Déclencher une erreur 404
+    protected function notFound($message = null)
+    {
+        Router::notFound($message);
     }
 }

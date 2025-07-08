@@ -4,6 +4,9 @@ class Post extends Model
 {
     public function getPaginated($limit = 5, $offset = 0, $userId = null)
     {
+        $limit = (int) $limit;
+        $offset = (int) $offset;
+        
         $userLikeCheck = $userId ? "COUNT(DISTINCT user_likes.id) as user_has_liked" : "0 as user_has_liked";
         $userJoin = $userId ? "LEFT JOIN likes user_likes ON posts.id = user_likes.post_id AND user_likes.user_id = ?" : "";
         
@@ -21,19 +24,15 @@ class Post extends Model
             $userJoin
             GROUP BY posts.id
             ORDER BY posts.created_at DESC 
-            LIMIT ? OFFSET ?
+            LIMIT $limit OFFSET $offset
         ");
         
         if ($userId) {
-            $stmt->bindValue(1, (int) $userId, PDO::PARAM_INT);
-            $stmt->bindValue(2, (int) $limit, PDO::PARAM_INT);
-            $stmt->bindValue(3, (int) $offset, PDO::PARAM_INT);
+            $stmt->execute([(int) $userId]);
         } else {
-            $stmt->bindValue(1, (int) $limit, PDO::PARAM_INT);
-            $stmt->bindValue(2, (int) $offset, PDO::PARAM_INT);
+            $stmt->execute();
         }
         
-        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

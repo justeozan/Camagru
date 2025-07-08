@@ -117,8 +117,6 @@ class UserController extends Controller {
 	}
 
 	public function logout(){
-		session_start();
-
 		// Supprimer toutes les variables de session
 		$_SESSION = [];
 
@@ -141,6 +139,13 @@ class UserController extends Controller {
 
 		$userModel = $this->model('User');
 		$user = $userModel->getById($_SESSION['user_id']);
+		
+		if (!$user) {
+			die("Utilisateur non trouvé");
+		}
+
+		// Mettre à jour les données de session avec les données de la DB
+		$_SESSION['user'] = $user;
 
 		require_once '../app/views/account.php';
 	}
@@ -249,5 +254,38 @@ class UserController extends Controller {
 			die("Utilisateur non trouvé");
 		}
 		require_once '../app/views/confirm.php';
+	}
+
+	// Mettre à jour les préférences utilisateur
+	public function updatePreferences()
+	{
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$this->requireAuth();
+
+			$notifyOnComment = isset($_POST['notify_on_comment']) ? 1 : 0;
+			
+			$userModel = $this->model('User');
+			$success = $userModel->updateNotificationPreference($_SESSION['user_id'], $notifyOnComment);
+
+			if ($success) {
+				// Mettre à jour la session
+				$_SESSION['user']['notify_on_comment'] = $notifyOnComment;
+				
+				echo "<div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4'>
+					✅ Préférences mises à jour avec succès !
+				</div>";
+			} else {
+				echo "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4'>
+					❌ Erreur lors de la mise à jour des préférences.
+				</div>";
+			}
+			
+			// Rediriger vers la page account après un court délai
+			echo "<script>
+				setTimeout(() => {
+					window.location.href = '/user/account';
+				}, 2000);
+			</script>";
+		}
 	}
 }
