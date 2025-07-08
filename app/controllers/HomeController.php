@@ -1,10 +1,5 @@
 <?php
 
-// Démarrer la session pour vérifier l'état de connexion
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 class HomeController extends Controller
 {
     public function index()

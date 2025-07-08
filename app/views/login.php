@@ -32,6 +32,8 @@
                 </a>
             </div>
 
+            //section erreur
+
 						<p class="text-sm text-center text-gray-600 mt-6">
 								Pas encore inscrit ? <a href="/user/register" class="text-blue-600 hover:underline font-medium">Créer un compte</a>
 						</p>
