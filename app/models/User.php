@@ -33,6 +33,17 @@ class User extends Model {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    // Fonction pour récupérer un utilisateur par son ID
+    public function getById($id) {
+        // Préparation d'une requête pour chercher l'utilisateur par son ID
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        // Exécution de la requête avec l'ID
+        $stmt->execute([$id]);
+
+        // Retourne la première ligne trouvée, ou "false" si aucun résultat
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
 	// Fonction pour vérifier si un utilisateur existe avec un token spécifique
 	public function verifyByToken($token)
 	{
