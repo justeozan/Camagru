@@ -9,3 +9,4 @@ $password = $_ENV['DB_PASS'] ?: '';
 
 
 $dsn = "mysql:host={$host};dbname={$database};charset=utf8mb4";
+
