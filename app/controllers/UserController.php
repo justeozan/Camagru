@@ -113,6 +113,19 @@ class UserController extends Controller {
 
 	public function account()
 	{
+		if (!isset($_SESSION['user_id'])) {
+			header("Location: /user/login");
+			exit();
+		}
+
+		$userModel = $this->model('User');
+		$user = $userModel->getById($_SESSION['user_id']);
+
+		require_once '../app/views/account.php';
+	}
+
+	public function confirm()
+	{
 		// if (!isset($_SESSION['user_id'])) {
 		// 	header("Location: /user/login");
 		// 	exit();
@@ -120,7 +133,9 @@ class UserController extends Controller {
 
 		// $userModel = $this->model('User');
 		// $user = $userModel->getById($_SESSION['user_id']);
-
-		require_once '../app/views/account.php';
+		// if (!$user) {
+		// 	die("Utilisateur non trouvé");
+		// }
+		require_once '../app/views/confirm.php';
 	}
 }
