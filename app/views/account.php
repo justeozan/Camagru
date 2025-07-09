@@ -108,46 +108,29 @@
 				<h2 class="text-xl font-semibold text-gray-900 mb-6">Sécurité</h2>
 				
 				<form action="/user/changePassword" method="POST" class="space-y-6">
+					<!-- Current Password -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">Mot de passe actuel</label>
+						<input type="password" name="current_password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"required>
+					</div>
+					
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<!-- Current Password -->
-						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Mot de passe actuel</label>
-							<input 
-								type="password" 
-								name="current_password"
-								class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-								required
-							>
-						</div>
-
 						<!-- New Password -->
 						<div>
 							<label class="block text-sm font-medium text-gray-700 mb-2">Nouveau mot de passe</label>
-							<input 
-								type="password" 
-								name="new_password"
-								class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-								required
-							>
+							<input type="password" name="new_password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"required>
 						</div>
-					</div>
-
-					<!-- Confirm Password -->
-					<div class="max-w-md">
-						<label class="block text-sm font-medium text-gray-700 mb-2">Confirmer le nouveau mot de passe</label>
-						<input 
-							type="password" 
-							name="confirm_password"
-							class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-							required
-						>
+						
+						<!-- Confirm Password -->
+						<div class="max-w-md">
+							<label class="block text-sm font-medium text-gray-700 mb-2">Confirmer le nouveau mot de passe</label>
+							<input type="password" name="confirm_password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"required>
+						</div>
 					</div>
 
 					<!-- Change Password Button -->
 					<div class="pt-4">
-						<button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200 font-medium">
-							Changer le mot de passe
-						</button>
+						<button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200 font-medium">Changer le mot de passe</button>
 					</div>
 				</form>
 			</div>
@@ -260,19 +243,8 @@
 			</div>
 			
 			<div class="flex space-x-4 mt-6">
-				<button 
-					type="button" 
-					onclick="closeEditProfileModal()"
-					class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition duration-200"
-				>
-					Annuler
-				</button>
-				<button 
-					type="submit"
-					class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition duration-200"
-				>
-					Sauvegarder
-				</button>
+				<button type="button" onclick="closeEditProfileModal()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition duration-200">Annuler</button>
+				<button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition duration-200">Sauvegarder</button>
 			</div>
 		</form>
 	</div>
@@ -287,30 +259,12 @@
 		<form action="/user/deleteAccount" method="POST">
 			<div class="mb-4">
 				<label class="block text-sm font-medium text-gray-700 mb-2">Tapez "SUPPRIMER" pour confirmer</label>
-				<input 
-					type="text" 
-					id="confirmText"
-					class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-400 focus:border-transparent"
-					required
-				>
+				<input type="text" id="confirmText" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-400 focus:border-transparent"required>
 			</div>
 			
 			<div class="flex space-x-4">
-				<button 
-					type="button" 
-					onclick="closeDeleteModal()"
-					class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition duration-200"
-				>
-					Annuler
-				</button>
-				<button 
-					type="submit" 
-					id="confirmDeleteBtn"
-					disabled
-					class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					Supprimer définitivement
-				</button>
+				<button type="button" onclick="closeDeleteModal()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition duration-200">Annuler</button>
+				<button type="submit" disabled id="confirmDeleteBtn" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">Supprimer définitivement</button>
 			</div>
 		</form>
 	</div>
@@ -326,9 +280,7 @@ function showToast() {
 		toast.classList.add('translate-x-0');
 		
 		// Auto-hide after 5 seconds
-		setTimeout(() => {
-			closeToast();
-		}, 5000);
+		setTimeout(() => { closeToast(); }, 5000);
 	}
 }
 

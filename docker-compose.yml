@@ -43,5 +43,12 @@ services:
       - "8025:8025"  # Interface web
       - "1025:1025"  # Port SMTP utilisé par PHP
 
+  adminer:
+    image: adminer
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mariadb
+
 volumes:
   mariadb_data:
