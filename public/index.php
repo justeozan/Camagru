@@ -10,6 +10,9 @@ if (file_exists(__DIR__ . '/../.env')) {
     }
 }
 
+// Initialisation de la session
+require_once "../config/init.php";
+
 spl_autoload_register(function ($class) {
     if (file_exists("../core/$class.php")) require_once "../core/$class.php";
     if (file_exists("../app/models/$class.php")) require_once "../app/models/$class.php";
