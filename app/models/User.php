@@ -111,9 +111,9 @@ class User extends Model {
 	}
 	
 	// Fonction pour mettre à jour les préférences d'un utilisateur
-	public function updatePreferences($userId, $publicProfile, $emailNotifications) {
-		$stmt = $this->db->prepare("UPDATE users SET public_profile = ?, email_notifications = ? WHERE id = ?");
-		return $stmt->execute([$publicProfile, $emailNotifications, $userId]);
+	public function updatePreferences($userId, $emailNotifications) {
+		$stmt = $this->db->prepare("UPDATE users SET notify_on_comment = ? WHERE id = ?");
+		return $stmt->execute([$emailNotifications, $userId]);
 	}
 
 	// Fonction pour mettre à jour les préférences de notification

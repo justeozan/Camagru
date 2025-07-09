@@ -30,14 +30,29 @@ class Controller {
         }
     }
 
+    // reusable error handling methods
+    protected function setToastError($message, $redirectTo = null) {
+        $_SESSION['toast'] = ['type' => 'error', 'message' => $message];
+        if ($redirectTo) {
+            header("Location: $redirectTo");
+            exit();
+        }
+    }
+
+    protected function setToastSuccess($message, $redirectTo = null) {
+        $_SESSION['toast'] = ['type' => 'success', 'message' => $message];
+        if ($redirectTo) {
+            header("Location: $redirectTo");
+            exit();
+        }
+    }
+
     public function model($model) {
         require_once "../app/models/$model.php";
         return new $model();
     }
 
-    // Déclencher une erreur 404
-    protected function notFound($message = null)
-    {
+    protected function notFound($message = null) {
         Router::notFound($message);
     }
 }
