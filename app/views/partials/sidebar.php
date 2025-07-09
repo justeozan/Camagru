@@ -116,10 +116,26 @@
     }
   }
 
+  // Initialisation au chargement de la page
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+    
+    // En vue mobile, s'assurer que le bouton est visible si la sidebar est fermée
+    if (window.innerWidth < 1024 && sidebar.classList.contains('-translate-x-full')) {
+      mobileMenuButton.classList.remove('hidden');
+    }
+  });
+
   document.addEventListener('click', function(event) {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     const mobileMenuButton = document.getElementById('mobileMenuButton');
+
+    // Ne pas fermer si on clique sur le bouton burger
+    if (mobileMenuButton.contains(event.target)) {
+      return;
+    }
 
     if (!sidebar.contains(event.target) && window.innerWidth < 1024) {
       sidebar.classList.add('-translate-x-full');
@@ -136,7 +152,12 @@
     if (window.innerWidth >= 1024) {
       sidebar.classList.remove('-translate-x-full');
       overlay.classList.add('hidden');
-      mobileMenuButton.classList.remove('hidden');
+      mobileMenuButton.classList.add('hidden');
+    } else {
+      // En vue mobile, si la sidebar est fermée, montrer le bouton
+      if (sidebar.classList.contains('-translate-x-full')) {
+        mobileMenuButton.classList.remove('hidden');
+      }
     }
   });
 </script>
