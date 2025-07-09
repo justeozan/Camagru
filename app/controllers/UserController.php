@@ -437,9 +437,26 @@ class UserController extends Controller {
 			}
 
 			// Create uploads directory if it doesn't exist
-			$uploadDir = '../public/uploads/avatars/';
+			$uploadDir = '/var/www/html/uploads/avatars/';
 			if (!file_exists($uploadDir)) {
-				mkdir($uploadDir, 0755, true);
+				if (!mkdir($uploadDir, 0755, true)) {
+					$_SESSION['toast'] = [
+						'type' => 'error',
+						'message' => 'Impossible de créer le dossier de destination.'
+					];
+					header('Location: /user/account');
+					exit();
+				}
+			}
+
+			// Check if directory is writable
+			if (!is_writable($uploadDir)) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Le dossier de destination n\'est pas accessible en écriture.'
+				];
+				header('Location: /user/account');
+				exit();
 			}
 
 			// Generate unique filename
@@ -454,7 +471,8 @@ class UserController extends Controller {
 				
 				// Delete old avatar if exists (check both session and database)
 				if (!empty($_SESSION['user']['avatar'])) {
-					$oldAvatarPath = '../public' . $_SESSION['user']['avatar'];
+					// Convert web path to filesystem path
+					$oldAvatarPath = '/var/www/html' . $_SESSION['user']['avatar'];
 					if (file_exists($oldAvatarPath)) {
 						unlink($oldAvatarPath);
 					}
@@ -476,9 +494,15 @@ class UserController extends Controller {
 					];
 				}
 			} else {
+				// Get more specific error information
+				$error = error_get_last();
+				$errorMsg = 'Erreur lors de l\'enregistrement de l\'image.';
+				if ($error && strpos($error['message'], 'Permission denied') !== false) {
+					$errorMsg .= ' Permissions insuffisantes.';
+				}
 				$_SESSION['toast'] = [
 					'type' => 'error',
-					'message' => 'Erreur lors de l\'enregistrement de l\'image.'
+					'message' => $errorMsg
 				];
 			}
 
@@ -505,7 +529,7 @@ class UserController extends Controller {
 		if (empty($username) || empty($email)) {
 			$_SESSION['toast'] = [
 				'type' => 'error',
-				'message' => 'Le nom d\'utilisateur et l\'email sont obligatoires.'
+				'message' => "Le nom d'utilisateur et l'email sont obligatoires."
 			];
 			header('Location: /user/account');
 			exit();
@@ -514,7 +538,7 @@ class UserController extends Controller {
 		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 			$_SESSION['toast'] = [
 				'type' => 'error',
-				'message' => 'L\'adresse email n\'est pas valide.'
+				'message' => "L'adresse email n'est pas valide."
 			];
 			header('Location: /user/account');
 			exit();
@@ -527,7 +551,7 @@ class UserController extends Controller {
 		if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) {
 			$_SESSION['toast'] = [
 				'type' => 'error',
-				'message' => 'Cette adresse email est déjà utilisée par un autre compte.'
+				'message' => "Cette adresse email est déjà utilisée par un autre compte."
 			];
 			header('Location: /user/account');
 			exit();
