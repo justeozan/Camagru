@@ -2,45 +2,50 @@
 
 class UserController extends Controller {
 
-	public function register()
-	{
-		require_once '../app/views/register.php';
+	public function login() { require_once '../app/views/login.php'; }
+	public function register() { require_once '../app/views/register.php'; }
+	public function resetPassword() { require_once '../app/views/resetPassword.php'; }
+
+	public function loginSubmit() {
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$email = trim($_POST['email']);
+			$password = trim($_POST['password']);
+
+			$userModel = $this->model('User');
+			$user = $userModel->getByEmail($email);
+
+			if (!$user) $this->setToastError('Aucun compte trouvé avec cette adresse email.', '/user/login');
+			if (!password_verify($password, $user['password'])) $this->setToastError('Mot de passe incorrect.', '/user/login');
+
+			$_SESSION['user_id'] = $user['id'];
+			$_SESSION['username'] = $user['username'];
+			$_SESSION['email'] = $user['email'];
+
+			$_SESSION['user'] = $user;
+
+			if (!$user['is_verified'])
+				header("Location: /user/confirm");
+			else
+				header("Location: /");
+			exit();
+		}
 	}
 
-	public function registerSubmit()
-	{
+	public function registerSubmit() {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$username = trim($_POST['username']);
 			$email = trim($_POST['email']);
 			$password = trim($_POST['password']);
 
-			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Email invalide.'
-				];
-				header('Location: /user/register');
-				exit();
-			}
-
-			if (strlen($password) < 8) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Mot de passe trop court (min 8 caractères).'
-				];
-				header('Location: /user/register');
-				exit();
-			}
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $this->setToastError('Email invalide.', '/user/register');
+			if (strlen($password) < 8) $this->setToastError('Mot de passe trop court (min 8 caractères).', '/user/register');
 
 			$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 			$token = bin2hex(random_bytes(32)); // token sécurisé
-
 			$userModel = $this->model('User');
 			$existing = $userModel->getByEmail($email);
 
-			if ($existing) {
-				die("Cet email est déjà utilisé.");
-			}
+			if ($existing) $this->setToastError('Un compte existe déjà avec cette adresse email.', '/user/register');
 
 			$userModel->create($username, $email, $hashedPassword, $token);
 
@@ -88,21 +93,15 @@ class UserController extends Controller {
 			$headers .= "Content-type: text/html; charset=UTF-8\r\n";
 			$headers .= "From: Camagru <noreply@camagru.local>\r\n";
 
-			// ✅ Appel à mail() — fonctionne avec MailHog dans Docker
 			if (mail($email, $subject, $message, $headers)) {
-				// Start session and set user data
 				require_once '../app/models/User.php';
 				$newUser = $userModel->getByEmail($email);
 				$_SESSION['user_id'] = $newUser['id'];
 				$_SESSION['username'] = $newUser['username'];
 				$_SESSION['email'] = $newUser['email'];
-				
-				// Redirect to confirm page
 				header("Location: /user/confirm");
 				exit();
-			} else {
-				echo "Erreur lors de l'envoi du mail.";
-			}
+			} else { $this->setToastError("Erreur lors de l'envoi du mail de confirmation.", '/user/register'); }
 		}
 	}
 
@@ -110,113 +109,32 @@ class UserController extends Controller {
 	public function verify($token) {
 		$userModel = $this->model('User');
 
-		if ($userModel->verifyByToken($token)) {
-			// echo "<h1>✅ Ton compte a été vérifié avec succès !</h1>";
-			// echo "<a href='/user/login'>Tu peux maintenant te connecter</a>";
-			$_SESSION['toast'] = [
-				'type' => 'success',
-				'message' => 'Ton compte a été vérifié avec succès !'
-			];
-			header('Location: /');
-		} else {
-			$_SESSION['toast'] = [
-				'type' => 'error',
-				'message' => 'Lien de vérification invalide ou expiré.'
-			];
-			header('Location: /user/login');
-		}
-	}
-	
-
-	public function login()
-	{
-		require_once '../app/views/login.php';
+		if ($userModel->verifyByToken($token))
+			$this->setToastSuccess('Ton compte a été vérifié avec succès !', '/');
+		else
+			$this->setToastError('Lien de vérification invalide ou expiré.', '/user/login');
 	}
 
-	public function loginSubmit()
-	{
-		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-			$email = trim($_POST['email']);
-			$password = trim($_POST['password']);
-
-			$userModel = $this->model('User');
-			$user = $userModel->getByEmail($email);
-
-			if (!$user) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Utilisateur non trouvé.'
-				];
-				header('Location: /user/login');
-					exit();
-			}
-
-			if (!password_verify($password, $user['password'])) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Mot de passe incorrect.'
-				];
-				header('Location: /user/login');
-				exit();
-			}
-
-			$_SESSION['user_id'] = $user['id'];
-			$_SESSION['username'] = $user['username'];
-			$_SESSION['email'] = $user['email'];
-			
-			// Store full user data for easy access
-			$_SESSION['user'] = $user;
-
-			if (!$user['is_verified']) {
-				header("Location: /user/confirm");
-			} else {
-				header("Location: /");
-			}
-			exit();
-		}
-	}
-
-	public function logout(){
-		// Supprimer toutes les variables de session
+	public function logout() {
 		$_SESSION = [];
-
-		// Supprimer le cookie de session
 		if (ini_get("session.use_cookies")) {
 			$params = session_get_cookie_params();
 			setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
 		}
-
-		// Détruire la session
 		session_destroy();
-
-		header("Location: /");
-		exit();
+		header("Location: /user/login");
 	}
 
-	public function account()
-	{
+	public function account() {
 		$this->requireVerify(); // Require verified user to access account
-
 		$userModel = $this->model('User');
 		$user = $userModel->getById($_SESSION['user_id']);
-		
-		if (!$user) {
-			die("Utilisateur non trouvé");
-		}
-
-		// Mettre à jour les données de session avec les données de la DB
+		if (!$user) { $this->setToastError('Utilisateur non trouvé.', '/'); exit(); }
 		$_SESSION['user'] = $user;
-
 		require_once '../app/views/account.php';
 	}
 
-	public function resetPassword()
-	{
-		require_once '../app/views/resetPassword.php';
-	}
-
-	public function resetPasswordSubmit()
-	{
+	public function resetPasswordSubmit() {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$email = trim($_POST['email']);
 
@@ -286,8 +204,7 @@ class UserController extends Controller {
 		}
 	}
 
-	public function newPassword($token = null)
-	{
+	public function newPassword($token = null) {
 		if (!$token) {
 			header("Location: /user/login");
 			exit();
@@ -295,129 +212,58 @@ class UserController extends Controller {
 
 		$userModel = $this->model('User');
 		$user = $userModel->verifyResetToken($token);
-
-		if (!$user) {
-			echo "<div class='alert-error'>Lien de réinitialisation invalide ou expiré.</div>";
-			echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
-			return;
-		}
-
+		if (!$user) $this->setToastError('Lien de réinitialisation invalide ou expiré.', '/user/resetPassword');
 		require_once '../app/views/newPassword.php';
 	}
 
-	public function newPasswordSubmit()
-	{
+	public function newPasswordSubmit() {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$token = trim($_POST['token']);
 			$password = trim($_POST['password']);
 			$confirmPassword = trim($_POST['confirm_password']);
 
-			if (strlen($password) < 8) {
-				die("Mot de passe trop court (min 8 caractères).");
-			}
-
-			if ($password !== $confirmPassword) {
-				die("Les mots de passe ne correspondent pas.");
-			}
+			if (strlen($password) < 8) $this->setToastError("Mot de passe trop court (min 8 caractères).", '/user/newPassword/' . $token);
+			if ($password !== $confirmPassword) $this->setToastError("Les mots de passe ne correspondent pas.", '/user/newPassword/' . $token);
 
 			$userModel = $this->model('User');
 			
-			if ($userModel->resetPassword($token, $password)) {
-				echo "<div class='alert-success'>Votre mot de passe a été réinitialisé avec succès !</div>";
-				echo "<a href='/user/login'>Se connecter avec le nouveau mot de passe</a>";
-			} else {
-				echo "<div class='alert-error'>Erreur lors de la réinitialisation. Le lien a peut-être expiré.</div>";
-				echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
-			}
+			if ($userModel->resetPassword($token, $password))
+				$this->setToastSuccess("Votre mot de passe a été réinitialisé avec succès !", '/user/login');
+			else
+				$this->setToastError("Erreur lors de la réinitialisation. Le lien a peut-être expiré.", '/user/resetPassword');
 		}
 	}
 
-	public function changePassword()
-	{
+	public function changePassword() {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$userModel = $this->model('User');
 			
-			// Check if this is a password reset with token or password change from account page
-			if (isset($_POST['token'])) {
-				// Password reset flow
+			if (isset($_POST['token'])) { // Check if this is a password reset with token or password change from account page
 				$token = trim($_POST['token']);
 				$password = trim($_POST['password']);
 				$confirmPassword = trim($_POST['confirm_password']);
 
-				if (strlen($password) < 8) {
-					die("Mot de passe trop court (min 8 caractères).");
-				}
-
-				if ($password !== $confirmPassword) {
-					die("Les mots de passe ne correspondent pas.");
-				}
-				
-				if ($userModel->resetPassword($token, $password)) {
-					echo "<div class='alert-success'>Votre mot de passe a été réinitialisé avec succès !</div>";
-					echo "<a href='/user/login'>Se connecter avec le nouveau mot de passe</a>";
-				} else {
-					echo "<div class='alert-error'>Erreur lors de la réinitialisation. Le lien a peut-être expiré.</div>";
-					echo "<a href='/user/resetPassword'>Demander un nouveau lien</a>";
-				}
-			} else {
-				// Password change from account page
-				if (!isset($_SESSION['user_id'])) {
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Vous devez être connecté pour changer votre mot de passe.'
-					];
-					header('Location: /user/login');
-					exit();
-				}
+				if (strlen($password) < 8) $this->setToastError("Mot de passe trop court (min 8 caractères).", '/user/resetPassword');
+				if ($password !== $confirmPassword) $this->setToastError("Les mots de passe ne correspondent pas.", '/user/resetPassword');
+				if ($userModel->resetPassword($token, $password))
+					$this->setToastSuccess("Votre mot de passe a été réinitialisé avec succès !\n Connectez vous !", '/user/login');
+				else
+					$this->setToastError("Erreur lors de la réinitialisation. Le lien a peut-être expiré.", '/user/resetPassword');
+			} else { // Password change from account page
+				if (!isset($_SESSION['user_id'])) $this->setToastError("Vous devez être connecté pour changer votre mot de passe.", '/user/login');
 
 				$currentPassword = trim($_POST['current_password']);
 				$newPassword = trim($_POST['new_password']);
 				$confirmPassword = trim($_POST['confirm_password']);
 
-				// Validation
-				if (strlen($newPassword) < 8) {
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Le nouveau mot de passe doit contenir au moins 8 caractères.'
-					];
-					header('Location: /user/account');
-					exit();
-				}
+				if (strlen($newPassword) < 8) $this->setToastError("Le nouveau mot de passe doit contenir au moins 8 caractères.", '/user/account');
+				if ($newPassword !== $confirmPassword) $this->setToastError("Les nouveaux mots de passe ne correspondent pas.", '/user/account');
+				if (!$userModel->verifyCurrentPassword($_SESSION['user_id'], $currentPassword)) $this->setToastError("Le mot de passe actuel est incorrect.", '/user/account');
 
-				if ($newPassword !== $confirmPassword) {
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Les nouveaux mots de passe ne correspondent pas.'
-					];
-					header('Location: /user/account');
-					exit();
-				}
-
-				// Verify current password
-				if (!$userModel->verifyCurrentPassword($_SESSION['user_id'], $currentPassword)) {
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Le mot de passe actuel est incorrect.'
-					];
-					header('Location: /user/account');
-					exit();
-				}
-
-				// Update password
-				if ($userModel->updatePassword($_SESSION['user_id'], $newPassword)) {
-					$_SESSION['toast'] = [
-						'type' => 'success',
-						'message' => 'Votre mot de passe a été modifié avec succès !'
-					];
-				} else {
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Une erreur est survenue lors de la modification du mot de passe.'
-					];
-				}
-
-				header('Location: /user/account');
-				exit();
+				if ($userModel->updatePassword($_SESSION['user_id'], $newPassword))
+					$this->setToastSuccess("Votre mot de passe a été modifié avec succès !", '/user/account');
+				else
+					$this->setToastError("Une erreur est survenue lors de la modification du mot de passe.", '/user/account');
 			}
 		}
 	}
@@ -425,70 +271,17 @@ class UserController extends Controller {
 	public function updateAvatar()
 	{
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-			if (!isset($_SESSION['user_id'])) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Vous devez être connecté pour modifier votre avatar.'
-				];
-				header('Location: /user/login');
-				exit();
-			}
-
-			// Check if file was uploaded
-			if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Aucune image sélectionnée ou erreur lors du téléchargement.'
-				];
-				header('Location: /user/account');
-				exit();
-			}
+			if (!isset($_SESSION['user_id'])) $this->setToastError("Vous devez être connecté pour modifier votre avatar.", '/user/login');
+			if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) $this->setToastError("Aucune image sélectionnée ou erreur lors du téléchargement.", '/user/account');
 
 			$file = $_FILES['avatar'];
-			
-			// Validate file type
 			$allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-			if (!in_array($file['type'], $allowedTypes)) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Format d\'image non supporté. Utilisez JPG, PNG, GIF ou WebP.'
-				];
-				header('Location: /user/account');
-				exit();
-			}
+			if (!in_array($file['type'], $allowedTypes)) $this->setToastError("Format d'image non supporté. Utilisez JPG, PNG, GIF ou WebP.", '/user/account');
+			if ($file['size'] > 5 * 1024 * 1024) $this->setToastError("L'image est trop grande. Taille maximum: 5MB.", '/user/account');
 
-			// Validate file size (max 5MB)
-			if ($file['size'] > 5 * 1024 * 1024) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'L\'image est trop grande. Taille maximum: 5MB.'
-				];
-				header('Location: /user/account');
-				exit();
-			}
-
-			// Create uploads directory if it doesn't exist
 			$uploadDir = '/var/www/html/uploads/avatars/';
-			if (!file_exists($uploadDir)) {
-				if (!mkdir($uploadDir, 0755, true)) {
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Impossible de créer le dossier de destination.'
-					];
-					header('Location: /user/account');
-					exit();
-				}
-			}
-
-			// Check if directory is writable
-			if (!is_writable($uploadDir)) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Le dossier de destination n\'est pas accessible en écriture.'
-				];
-				header('Location: /user/account');
-				exit();
-			}
+			if (!file_exists($uploadDir) && !mkdir($uploadDir, 0755, true)) $this->setToastError("Impossible de créer le dossier de destination.", '/user/account');
+			if (!is_writable($uploadDir)) $this->setToastError("Le dossier de destination n'est pas accessible en écriture.", '/user/account');
 
 			// Generate unique filename
 			$fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -496,168 +289,99 @@ class UserController extends Controller {
 			$filePath = $uploadDir . $fileName;
 			$webPath = '/uploads/avatars/' . $fileName;
 
-			// Move uploaded file
 			if (move_uploaded_file($file['tmp_name'], $filePath)) {
 				$userModel = $this->model('User');
 				
-				// Delete old avatar if exists (check both session and database)
 				if (!empty($_SESSION['user']['avatar'])) {
-					// Convert web path to filesystem path
 					$oldAvatarPath = '/var/www/html' . $_SESSION['user']['avatar'];
-					if (file_exists($oldAvatarPath)) {
+					if (file_exists($oldAvatarPath))
 						unlink($oldAvatarPath);
-					}
 				}
 				
-				// Update database with web path
 				if ($userModel->updateAvatar($_SESSION['user_id'], $webPath)) {
 					$_SESSION['user']['avatar'] = $webPath;
-					$_SESSION['toast'] = [
-						'type' => 'success',
-						'message' => 'Votre photo de profil a été mise à jour avec succès !'
-					];
+					$this->setToastSuccess("Votre avatar a été mis à jour avec succès !");
 				} else {
-					// Delete uploaded file if database update failed
 					unlink($filePath);
-					$_SESSION['toast'] = [
-						'type' => 'error',
-						'message' => 'Erreur lors de la mise à jour de la base de données.'
-					];
+					$this->setToastError("Erreur lors de l'enregistrement de l'avatar.");
 				}
 			} else {
 				// Get more specific error information
 				$error = error_get_last();
 				$errorMsg = 'Erreur lors de l\'enregistrement de l\'image.';
-				if ($error && strpos($error['message'], 'Permission denied') !== false) {
+				if ($error && strpos($error['message'], 'Permission denied') !== false)
 					$errorMsg .= ' Permissions insuffisantes.';
-				}
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => $errorMsg
-				];
+				$this->setToastError($errorMsg);
 			}
 
 			header('Location: /user/account');
-			exit();
 		}
 	}
 
-	public function updateProfile()
-	{
+	public function updateProfile() {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-			if (!isset($_SESSION['user_id'])) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Vous devez être connecté pour modifier votre profil.'
-				];
-				header('Location: /user/login');
-				exit();
-			}
-		$username = trim($_POST['username']);
-		$email = trim($_POST['email']);
+			if (!isset($_SESSION['user_id']))
+				$this->setToastError("Vous devez être connecté pour modifier votre profil.", '/user/login');
+			$username = trim($_POST['username']);
+			$email = trim($_POST['email']);
 
-		// Validation
-		if (empty($username) || empty($email)) {
-			$_SESSION['toast'] = [
-				'type' => 'error',
-				'message' => "Le nom d'utilisateur et l'email sont obligatoires."
-			];
-			header('Location: /user/account');
-			exit();
-		}
-
-		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-			$_SESSION['toast'] = [
-				'type' => 'error',
-				'message' => "L'adresse email n'est pas valide."
-			];
-			header('Location: /user/account');
-			exit();
-		}
-
-		$userModel = $this->model('User');
-		
-		// Check if email is already taken by another user
-		$existingUser = $userModel->getByEmail($email);
-		if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) {
-			$_SESSION['toast'] = [
-				'type' => 'error',
-				'message' => "Cette adresse email est déjà utilisée par un autre compte."
-			];
-			header('Location: /user/account');
-			exit();
-		}
-
-		// Update profile
-		if ($userModel->updateProfile($_SESSION['user_id'], $username, $email)) {
-			// Update session data
-			$_SESSION['user']['username'] = $username;
-			$_SESSION['user']['email'] = $email;
-				
-				$_SESSION['toast'] = [
-					'type' => 'success',
-					'message' => 'Votre profil a été mis à jour avec succès !'
-				];
-			} else {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Une erreur est survenue lors de la mise à jour du profil.'
-				];
-			}
-
-			header('Location: /user/account');
-			exit();
-		}
-	}
-
-	public function updatePreferences()
-	{
-		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-			if (!isset($_SESSION['user_id'])) {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Vous devez être connecté pour modifier vos préférences.'
-				];
-				header('Location: /user/login');
-				exit();
-			}
-
-			$publicProfile = isset($_POST['public_profile']) ? 1 : 0;
-			$emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
+			if (empty($username) || empty($email)) $this->setToastError("Le nom d'utilisateur et l'email sont obligatoires.", '/user/account');
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $this->setToastError("L'adresse email est invalide.", '/user/account');
 
 			$userModel = $this->model('User');
 			
-			// Update preferences
-			if ($userModel->updatePreferences($_SESSION['user_id'], $publicProfile, $emailNotifications)) {
-				// Update session data
-				$_SESSION['user']['public_profile'] = $publicProfile;
-				$_SESSION['user']['email_notifications'] = $emailNotifications;
-				
-				$_SESSION['toast'] = [
-					'type' => 'success',
-					'message' => 'Vos préférences ont été mises à jour avec succès !'
-				];
-			} else {
-				$_SESSION['toast'] = [
-					'type' => 'error',
-					'message' => 'Une erreur est survenue lors de la mise à jour des préférences.'
-				];
-			}
+			// Check if email is already taken by another user
+			$existingUser = $userModel->getByEmail($email);
+			if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) $this->setToastError("Cette adresse email est déjà utilisée par un autre compte.", '/user/account');
 
-			header('Location: /user/account');
-			exit();
+			// Update profile
+			if ($userModel->updateProfile($_SESSION['user_id'], $username, $email)) {
+				$_SESSION['user']['username'] = $username;
+				$_SESSION['user']['email'] = $email;
+
+				$this->setToastSuccess("Votre profil a été mis à jour avec succès !", '/user/account');
+			} else {
+				$this->setToastError("Une erreur est survenue lors de la mise à jour du profil.", '/user/account');
+			}
 		}
 	}
 
-	public function confirm()
-	{
+	public function updatePreferences() {
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			if (!isset($_SESSION['user_id'])) $this->setToastError("Vous devez être connecté pour modifier vos préférences.", '/user/login');
+
+			$notifyOnComment = isset($_POST['notify_on_comment']) ? 1 : 0;
+			$userModel = $this->model('User');
+			
+			if ($userModel->updatePreferences($_SESSION['user_id'], $notifyOnComment)) {
+				$_SESSION['user']['notify_on_comment'] = $notifyOnComment;
+				$this->setToastSuccess("Vos préférences ont été mises à jour avec succès !", '/user/account');
+			} else
+				$this->setToastError("Une erreur est survenue lors de la mise à jour des préférences.", '/user/account');
+		}
+	}
+
+	public function confirm() {
 		$this->requireAuth();
 
 		$userModel = $this->model('User');
 		$user = $userModel->getById($_SESSION['user_id']);
-		if (!$user) {
-			die("Utilisateur non trouvé");
-		}
+		if (!$user) $this->setToastError("Utilisateur non trouvé", '/user/account');
 		require_once '../app/views/confirm.php';
+	}
+
+	public function deleteAccount() {
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$this->requireVerify();
+
+			$userModel = $this->model('User');
+			$userId = $_SESSION['user_id'];
+
+			if ($userModel->deleteAccount($userId)) {
+				session_destroy();
+				$this->setToastSuccess("Votre compte a été supprimé avec succès.", '/');
+			} else
+				$this->setToastError("Une erreur est survenue lors de la suppression du compte.", '/user/account');
+		}
 	}
 }
