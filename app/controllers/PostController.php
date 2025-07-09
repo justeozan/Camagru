@@ -231,4 +231,53 @@ class PostController extends Controller
         imagedestroy($main);
         return $ok ? $fn : false;
     }
+
+    public function myGallery()
+    {
+        $this->requireVerify(); // Vérifie que l'utilisateur est connecté et validé
+
+        // Numéro de page courant (GET ?page=)
+        $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = 12;                       // Nombre d'images par page
+        $offset  = ($page - 1) * $perPage;
+
+        $postModel = $this->model('Post');
+        $userId    = $_SESSION['user_id'];
+
+        // Récupère les posts de l'utilisateur, avec pagination
+        $posts = $postModel->getUserPosts($userId, $perPage, $offset);
+        $total = $postModel->countUserPosts($userId);
+        $pages = ceil($total / $perPage);
+
+        // Affiche la vue correspondante
+        require_once '../app/views/myposts.php';
+    }
+
+    public function delete()
+    {
+        $this->requireVerify();
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+            return;
+        }
+
+        $input  = json_decode(file_get_contents('php://input'), true);
+        $postId = $input['post_id'] ?? null;
+        $userId = $_SESSION['user_id'];
+
+        if (!$postId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Post ID manquant']);
+            return;
+        }
+
+        $pm = $this->model('Post');
+        if ($pm->deletePost($postId, $userId)) {
+            echo json_encode(['success' => true, 'message' => 'Photo supprimée']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Erreur suppression']);
+        }
+    }
 }

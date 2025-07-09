@@ -73,7 +73,7 @@
                 <?php if ($pages > 1): ?>
                 <div class="flex justify-center space-x-2">
                     <?php for ($i = 1; $i <= $pages; $i++): ?>
-                        <a href="/user/myphotos?page=<?= $i ?>" 
+                        <a href="/post/myGallery?page=<?= $i ?>" 
                            class="px-4 py-2 rounded-lg font-medium transition duration-200 <?= ($i == $page) ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' ?>">
                             <?= $i ?>
                         </a>

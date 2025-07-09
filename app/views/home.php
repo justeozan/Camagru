@@ -296,7 +296,7 @@ function toggleComments(postId) {
 function loadComments(postId) {
     console.log('Chargement des commentaires pour le post:', postId);
     
-    fetch(`/post/getComments?post_id=${postId}`)
+    fetch(`/post/comments?post_id=${postId}`)
     .then(response => {
         console.log('Réponse reçue:', response.status, response.statusText);
         if (!response.ok) {
@@ -376,7 +376,7 @@ function submitComment(postId) {
 
 // Nouvelle fonction pour mettre à jour le bouton commentaires
 function updateCommentsButton(postId) {
-    fetch(`/post/getComments?post_id=${postId}`)
+    fetch(`/post/comments?post_id=${postId}`)
     .then(response => response.json())
     .then(data => {
         if (data.success) {
