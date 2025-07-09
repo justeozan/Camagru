@@ -369,4 +369,19 @@ class UserController extends Controller {
 		if (!$user) $this->setToastError("Utilisateur non trouvé", '/user/account');
 		require_once '../app/views/confirm.php';
 	}
+
+	public function deleteAccount() {
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$this->requireVerify();
+
+			$userModel = $this->model('User');
+			$userId = $_SESSION['user_id'];
+
+			if ($userModel->deleteAccount($userId)) {
+				session_destroy();
+				$this->setToastSuccess("Votre compte a été supprimé avec succès.", '/');
+			} else
+				$this->setToastError("Une erreur est survenue lors de la suppression du compte.", '/user/account');
+		}
+	}
 }

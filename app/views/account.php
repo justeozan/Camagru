@@ -138,7 +138,7 @@
 							<h3 class="text-lg font-medium text-red-900">Supprimer le compte</h3>
 							<p class="text-sm text-red-600">Cette action est irréversible. Toutes vos données seront perdues.</p>
 						</div>
-						<button onclick="confirmDeleteAccount()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200 font-medium">Supprimer le compte</button>
+						<button onclick="confirmDeleteAccount()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-200 font-medium">Supprimer le compte</button>
 					</div>
 				</div>
 			</div>
@@ -175,13 +175,27 @@
 <!-- Delete Account Modal -->
 <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
 	<div class="bg-white rounded-xl p-6 max-w-md w-full">
-		<h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmer la suppression</h3>
-		<p class="text-gray-600 mb-6">Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.</p>
+		<div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+			<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.081 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+			</svg>
+		</div>
+		<h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Confirmer la suppression</h3>
+		<p class="text-gray-600 mb-6 text-center">Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est <strong>irréversible</strong> et supprimera :</p>
 		
-		<form action="/user/deleteAccount" method="POST">
+		<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+			<ul class="text-sm text-red-800 space-y-1">
+				<li>• Toutes vos photos et posts</li>
+				<li>• Tous vos commentaires</li>
+				<li>• Tous vos likes</li>
+				<li>• Vos informations personnelles</li>
+			</ul>
+		</div>
+		
+		<form action="/user/deleteAccount" method="POST" onsubmit="return validateDeleteForm()">
 			<div class="mb-4">
 				<label class="block text-sm font-medium text-gray-700 mb-2">Tapez "SUPPRIMER" pour confirmer</label>
-				<input type="text" id="confirmText" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-400 focus:border-transparent"required>
+				<input type="text" id="confirmText" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-400 focus:border-transparent" required placeholder="SUPPRIMER">
 			</div>
 			
 			<div class="flex space-x-4">
@@ -267,6 +281,15 @@ function closeDeleteModal() {
 		if (confirmText) confirmText.value = '';
 		if (confirmDeleteBtn) confirmDeleteBtn.disabled = true;
 	}
+}
+
+function validateDeleteForm() {
+	const confirmText = document.getElementById('confirmText');
+	if (confirmText && confirmText.value === 'SUPPRIMER') {
+		// Demander une confirmation finale
+		return confirm('Êtes-vous absolument sûr de vouloir supprimer votre compte ? Cette action ne peut pas être annulée.');
+	}
+	return false;
 }
 
 // Close modal on escape key
