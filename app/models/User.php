@@ -128,4 +128,44 @@ class User extends Model {
 		$stmt->execute([$postId]);
 		return $stmt->fetch(PDO::FETCH_ASSOC);
 	}
+
+	// Fonction pour supprimer un utilisateur et toutes ses données associées
+	public function deleteAccount($userId) {
+		try {
+			$this->db->beginTransaction();
+
+			$stmt = $this->db->prepare("SELECT image_path FROM posts WHERE user_id = ?");
+			$stmt->execute([$userId]);
+			$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+			foreach ($posts as $post) {
+				if (!empty($post['image_path'])) {
+					$fullPath = $_SERVER['DOCUMENT_ROOT'] . $post['image_path'];
+					if (file_exists($fullPath)) {
+						unlink($fullPath);
+					}
+				}
+			}
+
+			$stmt = $this->db->prepare("SELECT avatar FROM users WHERE id = ?");
+			$stmt->execute([$userId]);
+			$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+			if (!empty($user['avatar'])) {
+				$fullPath = $_SERVER['DOCUMENT_ROOT'] . $user['avatar'];
+				if (file_exists($fullPath))
+					unlink($fullPath);
+			}
+
+			$stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
+			$stmt->execute([$userId]);
+
+			$this->db->commit();
+			return true;
+
+		} catch (Exception $e) {
+			$this->db->rollback();
+			return false;
+		}
+	}
 }
