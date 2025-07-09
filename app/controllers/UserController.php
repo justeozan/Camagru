@@ -138,9 +138,8 @@ class UserController extends Controller {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$email = trim($_POST['email']);
 
-			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				die("Email invalide");
-			}
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+				$this->setToastError("Adresse email invalide.", '/user/resetPassword');
 
 			$userModel = $this->model('User');
 			$resetToken = $userModel->generateResetToken($email);
@@ -194,12 +193,12 @@ class UserController extends Controller {
 				$headers .= "From: Camagru <noreply@camagru.local>\r\n";
 
 				if (mail($email, $subject, $message, $headers)) {
-					echo "<div class='alert-success'>Un email de réinitialisation a été envoyé à votre adresse. Vérifiez votre boîte mail.</div>";
+					$this->setToastSuccess("Un email de réinitialisation a été envoyé à votre adresse. Vérifiez votre boîte mail.", '/user/login');
 				} else {
-					echo "<div class='alert-error'>Erreur lors de l'envoi du mail.</div>";
+					$this->setToastError("Erreur lors de l'envoi du mail.", '/user/resetPassword');
 				}
 			} else {
-				echo "<div class='alert-error'>Aucun compte associé à cette adresse email.</div>";
+				$this->setToastError("Aucun compte associé à cette adresse email.", '/user/resetPassword');
 			}
 		}
 	}
@@ -230,7 +229,7 @@ class UserController extends Controller {
 			if ($userModel->resetPassword($token, $password))
 				$this->setToastSuccess("Votre mot de passe a été réinitialisé avec succès !", '/user/login');
 			else
-				$this->setToastError("Erreur lors de la réinitialisation. Le lien a peut-être expiré.", '/user/resetPassword');
+				$this->setToastError("Erreur lors de la réinitialisation. Le lien a peut-être expiré.", '/user/newPassword');
 		}
 	}
 
