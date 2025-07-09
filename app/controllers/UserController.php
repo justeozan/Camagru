@@ -109,12 +109,21 @@ class UserController extends Controller {
 
 	public function verify($token) {
 		$userModel = $this->model('User');
-	
+
 		if ($userModel->verifyByToken($token)) {
-			echo "<h1>✅ Ton compte a été vérifié avec succès !</h1>";
-			echo "<a href='/user/login'>Tu peux maintenant te connecter</a>";
+			// echo "<h1>✅ Ton compte a été vérifié avec succès !</h1>";
+			// echo "<a href='/user/login'>Tu peux maintenant te connecter</a>";
+			$_SESSION['toast'] = [
+				'type' => 'success',
+				'message' => 'Ton compte a été vérifié avec succès !'
+			];
+			header('Location: /');
 		} else {
-			echo "<h1>❌ Lien de vérification invalide ou expiré.</h1>";
+			$_SESSION['toast'] = [
+				'type' => 'error',
+				'message' => 'Lien de vérification invalide ou expiré.'
+			];
+			header('Location: /user/login');
 		}
 	}
 	
