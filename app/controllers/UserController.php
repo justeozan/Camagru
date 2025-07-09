@@ -350,11 +350,11 @@ class UserController extends Controller {
 		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			if (!isset($_SESSION['user_id'])) $this->setToastError("Vous devez être connecté pour modifier vos préférences.", '/user/login');
 
-			$emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
+			$notifyOnComment = isset($_POST['notify_on_comment']) ? 1 : 0;
 			$userModel = $this->model('User');
 			
-			if ($userModel->updatePreferences($_SESSION['user_id'], $emailNotifications)) {
-				$_SESSION['user']['email_notifications'] = $emailNotifications;
+			if ($userModel->updatePreferences($_SESSION['user_id'], $notifyOnComment)) {
+				$_SESSION['user']['notify_on_comment'] = $notifyOnComment;
 				$this->setToastSuccess("Vos préférences ont été mises à jour avec succès !", '/user/account');
 			} else
 				$this->setToastError("Une erreur est survenue lors de la mise à jour des préférences.", '/user/account');
