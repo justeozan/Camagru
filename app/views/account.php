@@ -34,9 +34,7 @@
 								<label class="block text-sm font-medium text-gray-700 mb-2">Photo de profil</label>
 								<div class="flex items-center space-x-4">
 									<input type="file" name="avatar" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-									<button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 font-medium whitespace-nowrap">
-										Mettre à jour
-									</button>
+									<button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 font-medium whitespace-nowrap">Mettre à jour</button>
 								</div>
 							</div>
 						</div>
@@ -63,9 +61,7 @@
 
 					<!-- Edit Profile Button -->
 					<div class="pt-4">
-						<button onclick="showEditProfileModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
-							Modifier les informations
-						</button>
+						<button onclick="showEditProfileModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">Modifier les informations</button>
 					</div>
 				</div>
 			</div>
@@ -148,9 +144,7 @@
 
 					<!-- Save Preferences -->
 					<div class="pt-4">
-						<button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
-							Sauvegarder les préférences
-						</button>
+						<button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">Sauvegarder les préférences</button>
 					</div>
 				</form>
 			</div>
@@ -183,24 +177,12 @@
 			<div class="space-y-4">
 				<div>
 					<label class="block text-sm font-medium text-gray-700 mb-2">Nom d'utilisateur</label>
-					<input 
-						type="text" 
-						name="username" 
-						value="<?= htmlspecialchars($_SESSION['user']['username'] ?? '') ?>"
-						class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-						required
-					>
+					<input type="text" name="username" value="<?= htmlspecialchars($_SESSION['user']['username'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent" required>
 				</div>
 
 				<div>
 					<label class="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail</label>
-					<input 
-						type="email" 
-						name="email" 
-						value="<?= htmlspecialchars($_SESSION['user']['email'] ?? '') ?>"
-						class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-						required
-					>
+					<input type="email" name="email" value="<?= htmlspecialchars($_SESSION['user']['email'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent" required>
 				</div>
 			</div>
 			
