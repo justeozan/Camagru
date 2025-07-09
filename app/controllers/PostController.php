@@ -349,16 +349,61 @@ class PostController extends Controller
         }
     }
 
-    // Méthode de test pour vérifier le routage
-    public function test()
+    // Afficher les posts de l'utilisateur connecté (galerie privée)
+    public function myGallery()
     {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true,
-            'message' => 'PostController::test() fonctionne !',
-            'method' => $_SERVER['REQUEST_METHOD'],
-            'get_params' => $_GET,
-            'post_params' => $_POST
-        ]);
+        $this->requireVerify(); // Utilisateur connecté et vérifié
+
+        // Récupérer le numéro de page en prenant en compte la pagination
+        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        // Nombre d'images par page
+        $perPage = 12;
+        $offset = ($page - 1) * $perPage;
+
+        $postModel = $this->model('Post');
+        $userId = $_SESSION['user_id'];
+
+        $posts = $postModel->getUserPosts($userId, $perPage, $offset);
+        $total = $postModel->countUserPosts($userId);
+        $pages = ceil($total / $perPage);
+
+        require_once '../app/views/myposts.php';
+        
     }
+
+    // Supprimer un post
+    public function delete()
+    {
+        $this->requireVerify();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE')
+        {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+            return;
+        }
+
+        // Récupérer les données depuis le body de la requête DELETE
+        $input = json_decode(file_get_contents('php://input'), true);
+        $postId = $input['post_id'] ?? null;
+        $userId = $_SESSION['user_id'];
+
+        if (!$postId)
+        {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'ID de post manquant']);
+            return;
+        }
+
+        $postModel = $this->model('Post');
+
+        if ($postModel->deletePost($postId, $userId)) {
+            echo json_encode(['success' => true, 'message' => 'Photo supprimée avec succès']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression']);
+        }
+    }
+
+   
 } 
