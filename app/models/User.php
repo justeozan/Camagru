@@ -142,4 +142,24 @@ class User extends Model {
 		$stmt = $this->db->prepare("UPDATE users SET public_profile = ?, email_notifications = ? WHERE id = ?");
 		return $stmt->execute([$publicProfile, $emailNotifications, $userId]);
 	}
+
+	// Fonction pour mettre à jour les préférences de notification
+	public function updateNotificationPreference($userId, $notifyOnComment)
+	{
+		$stmt = $this->db->prepare("UPDATE users SET notify_on_comment = ? WHERE id = ?");
+		return $stmt->execute([(int)$notifyOnComment, $userId]);
+	}
+
+	// Fonction pour récupérer l'auteur d'un post avec ses préférences
+	public function getPostAuthor($postId)
+	{
+		$stmt = $this->db->prepare("
+			SELECT users.* 
+			FROM users 
+			JOIN posts ON users.id = posts.user_id 
+			WHERE posts.id = ?
+		");
+		$stmt->execute([$postId]);
+		return $stmt->fetch(PDO::FETCH_ASSOC);
+	}
 }

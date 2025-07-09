@@ -10,21 +10,21 @@
                 
                 <!-- Feed Posts -->
                 <div class="space-y-6">
-                    <?php if (isset($photos) && !empty($photos)): ?>
-                        <?php foreach ($photos as $photo): ?>
+                    <?php if (isset($posts) && !empty($posts)): ?>
+                        <?php foreach ($posts as $post): ?>
                             <!-- Post Card -->
-                            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden" data-post-id="<?= $post['id'] ?>">
                                 <!-- Post Header -->
                                 <div class="flex items-center justify-between p-4">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                                             <span class="text-white font-semibold text-sm">
-                                                <?= strtoupper(substr($photo['username'], 0, 1)) ?>
+                                                <?= strtoupper(substr($post['username'], 0, 1)) ?>
                                             </span>
                                         </div>
                                         <div>
-                                            <p class="font-semibold text-sm">@<?= htmlspecialchars($photo['username']) ?></p>
-                                            <p class="text-xs text-gray-500"><?= date('d/m/Y', strtotime($photo['created_at'])) ?></p>
+                                            <p class="font-semibold text-sm">@<?= htmlspecialchars($post['username']) ?></p>
+                                            <p class="text-xs text-gray-500"><?= date('d/m/Y', strtotime($post['created_at'])) ?></p>
                                         </div>
                                     </div>
                                     <button class="text-gray-400 hover:text-gray-600">
@@ -37,10 +37,10 @@
                                 <!-- Post Image -->
                                 <div class="aspect-square relative">
                                     <img 
-                                        src="<?= htmlspecialchars($photo['image_path']) ?>" 
-                                        alt="Photo par <?= htmlspecialchars($photo['username']) ?>"
+                                        src="<?= htmlspecialchars($post['image_path']) ?>" 
+                                        alt="Photo par <?= htmlspecialchars($post['username']) ?>"
                                         class="w-full h-full object-cover cursor-pointer"
-                                        onclick="openModal('<?= htmlspecialchars($photo['image_path']) ?>', '<?= htmlspecialchars($photo['username']) ?>')"
+                                        onclick="openModal('<?= htmlspecialchars($post['image_path']) ?>', '<?= htmlspecialchars($post['username']) ?>')"
                                     >
                                 </div>
                                 
@@ -49,14 +49,27 @@
                                     <div class="flex items-center justify-between mb-3">
                                         <div class="flex items-center space-x-4">
                                             <!-- Like button -->
-                                            <button class="flex items-center space-x-1 hover:scale-105 transition duration-200">
-                                                <svg class="w-6 h-6 text-gray-700 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                                </svg>
-                                            </button>
+                                            <?php if (isset($_SESSION['user_id'])): ?>
+                                                <button onclick="toggleLike(<?= $post['id'] ?>)" 
+                                                        class="like-btn flex items-center space-x-1 hover:scale-105 transition duration-200"
+                                                        data-post-id="<?= $post['id'] ?>"
+                                                        data-liked="<?= $post['user_has_liked'] > 0 ? 'true' : 'false' ?>">
+                                                    <svg class="w-6 h-6 <?= $post['user_has_liked'] > 0 ? 'text-red-500 fill-current' : 'text-gray-700' ?> hover:text-red-500" 
+                                                         fill="<?= $post['user_has_liked'] > 0 ? 'currentColor' : 'none' ?>" 
+                                                         stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                                    </svg>
+                                                </button>
+                                            <?php else: ?>
+                                                <button onclick="showLoginAlert()" class="flex items-center space-x-1 hover:scale-105 transition duration-200">
+                                                    <svg class="w-6 h-6 text-gray-700 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                                    </svg>
+                                                </button>
+                                            <?php endif; ?>
                                             
                                             <!-- Comment button -->
-                                            <button class="flex items-center space-x-1 hover:scale-105 transition duration-200">
+                                            <button onclick="toggleComments(<?= $post['id'] ?>)" class="flex items-center space-x-1 hover:scale-105 transition duration-200">
                                                 <svg class="w-6 h-6 text-gray-700 hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                                                 </svg>
@@ -79,32 +92,60 @@
                                     </div>
                                     
                                     <!-- Likes count -->
-                                    <p class="font-semibold text-sm mb-2"><?= $photo['likes_count'] ?? 0 ?> J'aime</p>
+                                    <p class="font-semibold text-sm mb-2 likes-count" data-post-id="<?= $post['id'] ?>">
+                                        <?= $post['likes_count'] ?> J'aime
+                                    </p>
                                     
                                     <!-- Caption -->
                                     <div class="text-sm">
-                                        <span class="font-semibold">@<?= htmlspecialchars($photo['username']) ?></span>
-                                        <span class="ml-1"><?= htmlspecialchars($photo['caption'] ?? '') ?></span>
+                                        <span class="font-semibold">@<?= htmlspecialchars($post['username']) ?></span>
+                                        <span class="ml-1"><?= htmlspecialchars($post['caption'] ?? '') ?></span>
                                     </div>
                                     
                                     <!-- Comments -->
-                                    <?php if (isset($photo['comments_count']) && $photo['comments_count'] > 0): ?>
-                                    <button class="text-gray-500 text-sm mt-1 hover:text-gray-700">
-                                        Voir les <?= $photo['comments_count'] ?> commentaires
+                                    <button onclick="toggleComments(<?= $post['id'] ?>)" class="text-gray-500 text-sm mt-1 hover:text-gray-700">
+                                        <?php if ($post['comments_count'] > 0): ?>
+                                            Voir les <?= $post['comments_count'] ?> commentaires
+                                        <?php else: ?>
+                                            Voir les commentaires
+                                        <?php endif; ?>
                                     </button>
-                                    <?php endif; ?>
+                                    
+                                    <!-- Comments section (hidden by default) -->
+                                    <div id="comments-<?= $post['id'] ?>" class="comments-section hidden mt-3 pt-3 border-t border-gray-100">
+                                        <div class="space-y-2 mb-3" id="comments-list-<?= $post['id'] ?>">
+                                            <!-- Comments will be loaded here -->
+                                        </div>
+                                    </div>
                                     
                                     <!-- Add comment -->
+                                    <?php if (isset($_SESSION['user_id'])): ?>
                                     <div class="flex items-center mt-3 pt-3 border-t border-gray-100">
                                         <input 
                                             type="text" 
+                                            id="comment-input-<?= $post['id'] ?>"
                                             placeholder="Ajouter un commentaire..." 
                                             class="flex-1 text-sm placeholder-gray-400 border-none outline-none focus:ring-0"
+                                            onkeypress="handleCommentSubmit(event, <?= $post['id'] ?>)"
                                         >
-                                        <button class="text-blue-600 font-semibold text-sm hover:text-blue-700">
+                                        <button onclick="submitComment(<?= $post['id'] ?>)" class="text-blue-600 font-semibold text-sm hover:text-blue-700">
                                             Publier
                                         </button>
                                     </div>
+                                    <?php else: ?>
+                                    <div class="flex items-center mt-3 pt-3 border-t border-gray-100">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Connectez-vous pour commenter..." 
+                                            class="flex-1 text-sm placeholder-gray-400 border-none outline-none focus:ring-0 cursor-not-allowed"
+                                            onclick="showLoginAlert()"
+                                            readonly
+                                        >
+                                        <button onclick="showLoginAlert()" class="text-gray-400 font-semibold text-sm">
+                                            Publier
+                                        </button>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -118,7 +159,7 @@
                             </div>
                             <h3 class="text-xl font-semibold text-gray-800 mb-2">Aucune photo pour le moment</h3>
                             <p class="text-gray-500 mb-6">Commencez à partager vos moments !</p>
-                            <a href="/camera" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition duration-200">
+                            <a href="/create" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition duration-200">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                 </svg>
@@ -127,7 +168,18 @@
                         </div>
                     <?php endif; ?>
                 </div>
-            </section>
+                
+                <!-- Pagination -->
+                <?php if (isset($pages) && $pages > 1): ?>
+                <div class="flex justify-center space-x-2 mt-8">
+                    <?php for ($i = 1; $i <= $pages; $i++): ?>
+                        <a href="?page=<?= $i ?>" 
+                           class="px-4 py-2 rounded-lg font-medium transition duration-200 <?= ($i == $page) ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+                <?php endif; ?>
         </main>
     </div>
 </div>
@@ -151,6 +203,7 @@
 </div>
 
 <script>
+// Gestion de la modal d'image
 function openModal(imagePath, username) {
     document.getElementById('modalImage').src = imagePath;
     document.getElementById('modalUsername').textContent = '@' + username;
@@ -163,23 +216,213 @@ function closeModal() {
     document.body.style.overflow = 'auto';
 }
 
-// Close modal on escape key
+// Fermer la modal avec Échap
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
     }
 });
 
-// Close modal on background click
+// Fermer la modal en cliquant sur l'arrière-plan
 document.getElementById('imageModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
     }
 });
 
-function loadMore() {
-    // Implement AJAX call to load more photos
-    // This would need to be connected to your backend
+// Gestion des likes
+function toggleLike(postId) {
+    const likeBtn = document.querySelector(`[data-post-id="${postId}"].like-btn`);
+    const isLiked = likeBtn.dataset.liked === 'true';
+    
+    fetch('/post/like', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `post_id=${postId}&action=${isLiked ? 'unlike' : 'like'}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour l'état du bouton
+            likeBtn.dataset.liked = data.liked ? 'true' : 'false';
+            const svg = likeBtn.querySelector('svg');
+            
+            if (data.liked) {
+                svg.classList.remove('text-gray-700');
+                svg.classList.add('text-red-500', 'fill-current');
+                svg.setAttribute('fill', 'currentColor');
+            } else {
+                svg.classList.remove('text-red-500', 'fill-current');
+                svg.classList.add('text-gray-700');
+                svg.setAttribute('fill', 'none');
+            }
+            
+            // Mettre à jour le compteur
+            const likesCount = document.querySelector(`.likes-count[data-post-id="${postId}"]`);
+            likesCount.textContent = `${data.likes_count} J'aime`;
+        } else {
+            console.error('Erreur lors du like:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur réseau:', error);
+    });
+}
+
+// Gestion des commentaires
+function toggleComments(postId) {
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    
+    if (commentsSection.classList.contains('hidden')) {
+        // Charger et afficher les commentaires
+        loadComments(postId);
+        commentsSection.classList.remove('hidden');
+        
+        // Focus automatiquement le champ de commentaire après un court délai
+        setTimeout(() => {
+            const commentInput = document.getElementById(`comment-input-${postId}`);
+            if (commentInput) {
+                commentInput.focus();
+            }
+        }, 100);
+    } else {
+        // Masquer les commentaires
+        commentsSection.classList.add('hidden');
+    }
+}
+
+function loadComments(postId) {
+    console.log('Chargement des commentaires pour le post:', postId);
+    
+    fetch(`/post/getComments?post_id=${postId}`)
+    .then(response => {
+        console.log('Réponse reçue:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Données reçues:', data);
+        if (data.success) {
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            commentsList.innerHTML = '';
+            
+            if (data.comments && data.comments.length > 0) {
+                data.comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'flex items-start space-x-2 text-sm';
+                    commentElement.innerHTML = `
+                        <span class="font-semibold">@${comment.username}</span>
+                        <span class="flex-1">${comment.content}</span>
+                        <span class="text-xs text-gray-500">${formatDate(comment.created_at)}</span>
+                    `;
+                    commentsList.appendChild(commentElement);
+                });
+            } else {
+                commentsList.innerHTML = '<p class="text-gray-500 text-sm">Aucun commentaire pour le moment.</p>';
+            }
+        } else {
+            console.error('Erreur API:', data.message);
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            commentsList.innerHTML = '<p class="text-red-500 text-sm">Erreur lors du chargement des commentaires.</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors du chargement des commentaires:', error);
+        const commentsList = document.getElementById(`comments-list-${postId}`);
+        commentsList.innerHTML = '<p class="text-red-500 text-sm">Erreur de connexion.</p>';
+    });
+}
+
+function submitComment(postId) {
+    const input = document.getElementById(`comment-input-${postId}`);
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch('/post/comment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `post_id=${postId}&content=${encodeURIComponent(content)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            
+            // Recharger les commentaires si la section est visible
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (!commentsSection.classList.contains('hidden')) {
+                loadComments(postId);
+            }
+            
+            // Mettre à jour le compteur de commentaires dans le bouton
+            updateCommentsButton(postId);
+            
+        } else {
+            alert('Erreur lors de l\'ajout du commentaire');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur réseau:', error);
+        alert('Erreur de connexion');
+    });
+}
+
+// Nouvelle fonction pour mettre à jour le bouton commentaires
+function updateCommentsButton(postId) {
+    fetch(`/post/getComments?post_id=${postId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const commentsButton = document.querySelector(`button[onclick="toggleComments(${postId})"]`);
+            if (commentsButton) {
+                const count = data.comments.length;
+                if (count > 0) {
+                    commentsButton.textContent = `Voir les ${count} commentaires`;
+                } else {
+                    commentsButton.textContent = 'Voir les commentaires';
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erreur mise à jour bouton:', error);
+    });
+}
+
+function handleCommentSubmit(event, postId) {
+    if (event.key === 'Enter') {
+        submitComment(postId);
+    }
+}
+
+function focusComment(postId) {
+    const input = document.getElementById(`comment-input-${postId}`);
+    if (input) {
+        input.focus();
+    }
+}
+
+function showLoginAlert() {
+    alert('Veuillez vous connecter pour interagir avec les publications.');
+}
+
+// Utilitaire pour formater les dates
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'maintenant';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    return date.toLocaleDateString('fr-FR');
 }
 </script>
 
