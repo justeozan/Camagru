@@ -25,5 +25,9 @@
   }
 </script>
 
+
+
 </head>
 <body>
+
+<?php require_once "../app/views/partials/toast.php"; ?>

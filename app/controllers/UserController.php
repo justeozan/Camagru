@@ -15,11 +15,21 @@ class UserController extends Controller {
 			$password = trim($_POST['password']);
 
 			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				die("Email invalide");
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Email invalide.'
+				];
+				header('Location: /user/register');
+				exit();
 			}
 
 			if (strlen($password) < 8) {
-				die("Mot de passe trop court (min 8 caractères).");
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Mot de passe trop court (min 8 caractères).'
+				];
+				header('Location: /user/register');
+				exit();
 			}
 
 			$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -123,11 +133,23 @@ class UserController extends Controller {
 			$userModel = $this->model('User');
 			$user = $userModel->getByEmail($email);
 
-			if (!$user)
-				die("Utilisateur non trouvé");
+			if (!$user) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Utilisateur non trouvé.'
+				];
+				header('Location: /user/login');
+					exit();
+			}
 
-			if (!password_verify($password, $user['password']))
-				die("Mot de passe incorrect");
+			if (!password_verify($password, $user['password'])) {
+				$_SESSION['toast'] = [
+					'type' => 'error',
+					'message' => 'Mot de passe incorrect.'
+				];
+				header('Location: /user/login');
+				exit();
+			}
 
 			$_SESSION['user_id'] = $user['id'];
 			$_SESSION['username'] = $user['username'];
