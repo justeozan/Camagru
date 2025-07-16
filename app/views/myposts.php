@@ -205,12 +205,12 @@ function deletePhoto() {
             closePhotoModal();
             window.location.reload();
         } else {
-            alert('Erreur lors de la suppression : ' + data.message);
+            alert('Erreur lors de la suppression de la photo.');
         }
     })
     .catch(error => {
-        console.error('Erreur:', error);
-        alert('Erreur de connexion');
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de la photo.');
     });
 }
 

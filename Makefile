@@ -2,6 +2,8 @@
 NAME = Camagru
 DC = docker compose
 
+
+
 # Paths
 APP_DIR = ./app
 CONF_DIR = ./config

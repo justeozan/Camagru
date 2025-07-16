@@ -20,7 +20,9 @@
           <!-- Webcam -->
           <div class="text-center">
             <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <!-- icône caméra -->
+              <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+              </svg>
             </div>
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Webcam</h3>
             <p class="text-gray-600 mb-4">Prenez une photo en direct</p>
@@ -31,7 +33,9 @@
           <!-- Upload fichier -->
           <div class="text-center">
             <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <!-- icône upload -->
+              <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              </svg>
             </div>
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Télécharger</h3>
             <p class="text-gray-600 mb-4">Choisir depuis vos fichiers</p>
@@ -132,6 +136,70 @@
           </div>
         </div>
       </div>
+
+      <!-- Section miniatures des anciennes photos -->
+      <?php if (!empty($userPosts)): ?>
+      <div class="mt-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Mes photos récentes</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <?php foreach ($userPosts as $post): ?>
+            <div class="relative group">
+              <img src="<?= htmlspecialchars($post['image_path']) ?>" 
+                   alt="Photo de <?= htmlspecialchars($post['username']) ?>" 
+                   class="w-full h-24 object-cover rounded-lg border border-gray-200 group-hover:border-blue-300 transition-colors">
+              
+              <!-- Overlay avec actions -->
+              <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                <div class="flex space-x-2">
+                  <!-- Bouton voir -->
+                  <a href="/#post-<?= $post['id'] ?>" 
+                     class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
+                     title="Voir la photo">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </a>
+                  
+                  <!-- Bouton supprimer -->
+                  <button onclick="deletePhoto(<?= $post['id'] ?>)" 
+                          class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+                          title="Supprimer la photo">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Informations de la photo -->
+              <div class="mt-2 text-xs text-gray-500">
+                <div class="flex items-center justify-between">
+                  <span><?= date('d/m/Y', strtotime($post['created_at'])) ?></span>
+                  <div class="flex space-x-2">
+                    <span>❤️ <?= $post['likes_count'] ?></span>
+                    <span>💬 <?= $post['comments_count'] ?></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          
+          <!-- Lien vers la galerie complète -->
+          <div class="mt-6 text-center">
+            <a href="/post/myGallery" 
+               class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Voir toutes mes photos
+            </a>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
 
     </main>
   </div>
@@ -262,29 +330,147 @@ function goToEditor(dataUrl){
 
 // 3) Envoi
 async function savePhoto(){
-  if (!editorCanvas||!rawImageData){ alert('Aucune image'); return; }
-  const caption=document.getElementById('caption').value,
-        blob = await (await fetch(rawImageData)).blob(),
-        form = new FormData();
-  form.append('photo', blob, 'photo.png');
-  form.append('caption', caption);
-  if (selectedOverlay){
-    form.append('overlay_file', selectedOverlay);
-    form.append('overlay_x', overlayPosition.x);
-    form.append('overlay_y', overlayPosition.y);
-    form.append('overlay_width', overlaySize.width);
-    form.append('overlay_height', overlaySize.height);
+  if (!editorCanvas||!rawImageData){ 
+    showClientToast('Aucune image sélectionnée', 'error');
+    return; 
   }
-  const res=await fetch('/post/uploadWithOverlay',{method:'POST',body:form}),
-        json=await res.json();
-  if (json.success){ alert('Photo publiée !'); location.href='/'; }
-  else alert('Erreur : '+(json.error||json.message));
+  
+  // Afficher un indicateur de chargement
+  const submitBtn = document.querySelector('button[onclick="savePhoto()"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Publication en cours...';
+  submitBtn.disabled = true;
+  
+  try {
+    const caption = document.getElementById('caption').value;
+    const blob = await (await fetch(rawImageData)).blob();
+    const form = new FormData();
+    
+    form.append('photo', blob, 'photo.png');
+    form.append('caption', caption);
+    
+    if (selectedOverlay){
+      form.append('overlay_file', selectedOverlay);
+      form.append('overlay_x', overlayPosition.x);
+      form.append('overlay_y', overlayPosition.y);
+      form.append('overlay_width', overlaySize.width);
+      form.append('overlay_height', overlaySize.height);
+    }
+    
+    // Envoi vers le serveur
+    const res = await fetch('/post/uploadWithOverlay', {
+      method: 'POST',
+      body: form
+    });
+    
+    const json = await res.json();
+    
+    // Rediriger vers la page spécifiée (avec le toast qui sera affiché)
+    if (json.redirect) {
+      window.location.href = json.redirect;
+    } else {
+      // Fallback si pas de redirection spécifiée
+      window.location.reload();
+    }
+    
+  } catch (error) {
+    showClientToast('Erreur de connexion', 'error');
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
 }
 
 function resetEditor(){ showSection('step1'); }
 
 function showSection(id){
   ['step1','cameraSection','editorSection'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));
+}
+
+// Fonction pour afficher un toast temporaire côté client
+function showClientToast(message, type = 'error') {
+  // Supprimer tout toast existant
+  const existingToast = document.getElementById('clientToast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  // Créer le nouveau toast
+  const toastHtml = `
+    <div id="clientToast" class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white border border-gray-200 rounded-lg shadow-lg transform translate-x-0 transition-transform duration-300 ease-in-out">
+      <div class="flex items-center p-4">
+        <div class="flex-shrink-0">
+          ${type === 'success' ? `
+            <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+          ` : `
+            <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            </svg>
+          `}
+        </div>
+        <div class="ml-3 w-0 flex-1">
+          <p class="text-sm font-medium text-gray-900">${message}</p>
+        </div>
+        <div class="ml-4 flex-shrink-0 flex">
+          <button onclick="closeClientToast()" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <span class="sr-only">Fermer</span>
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Ajouter le toast au DOM
+  document.body.insertAdjacentHTML('beforeend', toastHtml);
+  
+  // Auto-fermeture après 5 secondes
+  setTimeout(() => {
+    closeClientToast();
+  }, 5000);
+}
+
+function closeClientToast() {
+  const toast = document.getElementById('clientToast');
+  if (toast) {
+    toast.classList.add('translate-x-full');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }
+}
+
+// Fonction pour supprimer une photo avec confirmation
+async function deletePhoto(postId) {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer cette photo ? Cette action est irréversible.')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/post/delete', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        post_id: postId
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Recharger la page pour mettre à jour les miniatures
+      location.reload();
+    } else {
+      showClientToast(result.message || 'Erreur lors de la suppression', 'error');
+    }
+  } catch (error) {
+    showClientToast('Erreur réseau lors de la suppression', 'error');
+  }
 }
 </script>
 
