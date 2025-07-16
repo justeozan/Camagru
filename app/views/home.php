@@ -169,17 +169,34 @@
                     <?php endif; ?>
                 </div>
                 
-                <!-- Pagination -->
-                <?php if (isset($pages) && $pages > 1): ?>
-                <div class="flex justify-center space-x-2 mt-8">
-                    <?php for ($i = 1; $i <= $pages; $i++): ?>
-                        <a href="?page=<?= $i ?>" 
-                           class="px-4 py-2 rounded-lg font-medium transition duration-200 <?= ($i == $page) ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' ?>">
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
+                <!-- Indicateur de chargement et fin de contenu -->
+                <div id="loading-indicator" class="hidden flex justify-center items-center py-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span class="text-gray-600">Chargement des posts...</span>
+                    </div>
                 </div>
-                <?php endif; ?>
+                
+                <div id="end-of-content" class="hidden text-center py-8">
+                    <div class="text-gray-500">
+                        <p class="text-lg">✨ Vous avez tout vu !</p>
+                        <p class="text-sm mt-1">Il n'y a plus de posts à charger.</p>
+                    </div>
+                </div>
+                
+                <!-- Pagination fallback (masquée par défaut avec infinite scroll) -->
+                <div id="pagination-fallback" class="hidden">
+                    <?php if (isset($pages) && $pages > 1): ?>
+                    <div class="flex justify-center space-x-2 mt-8">
+                        <?php for ($i = 1; $i <= $pages; $i++): ?>
+                            <a href="?page=<?= $i ?>" 
+                               class="px-4 py-2 rounded-lg font-medium transition duration-200 <?= ($i == $page) ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' ?>">
+                                <?= $i ?>
+                            </a>
+                        <?php endfor; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
         </main>
     </div>
 </div>
@@ -262,12 +279,10 @@ function toggleLike(postId) {
             // Mettre à jour le compteur
             const likesCount = document.querySelector(`.likes-count[data-post-id="${postId}"]`);
             likesCount.textContent = `${data.likes_count} J'aime`;
-        } else {
-            console.error('Erreur lors du like:', data.message);
         }
     })
     .catch(error => {
-        console.error('Erreur réseau:', error);
+        console.error('Erreur lors de la mise à jour du like:', error);
     });
 }
 
@@ -294,18 +309,14 @@ function toggleComments(postId) {
 }
 
 function loadComments(postId) {
-    console.log('Chargement des commentaires pour le post:', postId);
-    
     fetch(`/post/comments?post_id=${postId}`)
     .then(response => {
-        console.log('Réponse reçue:', response.status, response.statusText);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
     })
     .then(data => {
-        console.log('Données reçues:', data);
         if (data.success) {
             const commentsList = document.getElementById(`comments-list-${postId}`);
             commentsList.innerHTML = '';
@@ -325,13 +336,11 @@ function loadComments(postId) {
                 commentsList.innerHTML = '<p class="text-gray-500 text-sm">Aucun commentaire pour le moment.</p>';
             }
         } else {
-            console.error('Erreur API:', data.message);
             const commentsList = document.getElementById(`comments-list-${postId}`);
             commentsList.innerHTML = '<p class="text-red-500 text-sm">Erreur lors du chargement des commentaires.</p>';
         }
     })
     .catch(error => {
-        console.error('Erreur lors du chargement des commentaires:', error);
         const commentsList = document.getElementById(`comments-list-${postId}`);
         commentsList.innerHTML = '<p class="text-red-500 text-sm">Erreur de connexion.</p>';
     });
@@ -363,14 +372,10 @@ function submitComment(postId) {
             
             // Mettre à jour le compteur de commentaires dans le bouton
             updateCommentsButton(postId);
-            
-        } else {
-            alert('Erreur lors de l\'ajout du commentaire');
         }
     })
     .catch(error => {
-        console.error('Erreur réseau:', error);
-        alert('Erreur de connexion');
+        console.error('Erreur lors de l\'ajout du commentaire:', error);
     });
 }
 
@@ -392,7 +397,7 @@ function updateCommentsButton(postId) {
         }
     })
     .catch(error => {
-        console.error('Erreur mise à jour bouton:', error);
+        // Erreur silencieuse pour la mise à jour du bouton
     });
 }
 
@@ -423,6 +428,153 @@ function formatDate(dateString) {
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
     return date.toLocaleDateString('fr-FR');
+}
+
+// ==================== PAGINATION INFINIE ====================
+// Variables globales pour la pagination infinie
+let currentPage = <?= $page ?>;
+let isLoading = false;
+let hasMorePosts = <?= ($total > $perPage * $page) ? 'true' : 'false' ?>;
+let totalPosts = <?= $total ?>;
+
+// Initialisation de la pagination infinie
+document.addEventListener('DOMContentLoaded', function() {
+    initInfiniteScroll();
+});
+
+function initInfiniteScroll() {
+    // Vérifier si l'Intersection Observer est supporté (compatible Firefox 55+, Chrome 51+)
+    if (!window.IntersectionObserver) {
+        // Fallback vers pagination classique si pas de support
+        document.getElementById('pagination-fallback').classList.remove('hidden');
+        return;
+    }
+
+    const postsContainer = document.querySelector('.space-y-6');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const endOfContent = document.getElementById('end-of-content');
+    
+    // Créer un élément sentinelle pour détecter le scroll
+    const sentinel = document.createElement('div');
+    sentinel.id = 'scroll-sentinel';
+    sentinel.style.height = '1px';
+    postsContainer.parentNode.insertBefore(sentinel, loadingIndicator);
+    
+    // Configuration de l'Intersection Observer
+    const observerOptions = {
+        root: null, // Viewport
+        rootMargin: '100px', // Charger 100px avant d'atteindre le bas
+        threshold: 0.1
+    };
+    
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && hasMorePosts && !isLoading) {
+                loadMorePosts();
+            }
+        });
+    }, observerOptions);
+    
+    // Commencer à observer la sentinelle
+    observer.observe(sentinel);
+    
+    // Afficher l'indicateur de fin si pas de posts supplémentaires
+    if (!hasMorePosts && totalPosts > 0) {
+        endOfContent.classList.remove('hidden');
+    }
+}
+
+async function loadMorePosts() {
+    if (isLoading || !hasMorePosts) return;
+    
+    isLoading = true;
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const endOfContent = document.getElementById('end-of-content');
+    const postsContainer = document.querySelector('.space-y-6');
+    
+    // Afficher l'indicateur de chargement
+    loadingIndicator.classList.remove('hidden');
+    endOfContent.classList.add('hidden');
+    
+    try {
+        const nextPage = currentPage + 1;
+        const response = await fetch(`/home/loadMorePosts?page=${nextPage}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.posts.length > 0) {
+            // Ajouter les nouveaux posts au DOM
+            data.posts.forEach(postHtml => {
+                postsContainer.insertAdjacentHTML('beforeend', postHtml);
+            });
+            
+            // Mettre à jour les variables de pagination
+            currentPage = data.currentPage;
+            hasMorePosts = data.hasMore;
+            totalPosts = data.totalPosts;
+            
+            // Masquer l'indicateur de chargement
+            loadingIndicator.classList.add('hidden');
+            
+            // Afficher la fin du contenu si plus de posts
+            if (!hasMorePosts) {
+                endOfContent.classList.remove('hidden');
+            }
+            
+        } else {
+            // Aucun post supplémentaire trouvé
+            hasMorePosts = false;
+            loadingIndicator.classList.add('hidden');
+            endOfContent.classList.remove('hidden');
+        }
+        
+    } catch (error) {
+        // Masquer l'indicateur de chargement
+        loadingIndicator.classList.add('hidden');
+        
+        // Afficher un message d'erreur temporaire
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'text-center py-4 text-red-600';
+        errorMessage.innerHTML = `
+            <p>Erreur lors du chargement des posts.</p>
+            <button onclick="retryLoadMore()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                Réessayer
+            </button>
+        `;
+        postsContainer.parentNode.insertBefore(errorMessage, loadingIndicator);
+        
+        // Supprimer le message d'erreur après 5 secondes
+        setTimeout(() => {
+            if (errorMessage.parentNode) {
+                errorMessage.parentNode.removeChild(errorMessage);
+            }
+        }, 5000);
+    }
+    
+    isLoading = false;
+}
+
+function retryLoadMore() {
+    // Supprimer les messages d'erreur existants
+    const errorMessages = document.querySelectorAll('.text-red-600');
+    errorMessages.forEach(msg => {
+        if (msg.parentNode) {
+            msg.parentNode.removeChild(msg);
+        }
+    });
+    
+    // Relancer le chargement
+    loadMorePosts();
 }
 </script>
 
