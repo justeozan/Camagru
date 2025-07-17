@@ -109,10 +109,18 @@ class UserController extends Controller {
 	public function verify($token) {
 		$userModel = $this->model('User');
 
-		if ($userModel->verifyByToken($token))
-			$this->setToastSuccess('Ton compte a été vérifié avec succès !', '/');
-		else
+		if ($userModel->verifyByToken($token)) {
+			// Update session data if user is currently logged in
+			if (isset($_SESSION['user_id'])) {
+				$user = $userModel->getById($_SESSION['user_id']);
+				if ($user) {
+					$_SESSION['user'] = $user;
+				}
+			}
+			$this->setToastSuccess('Votre adresse email a été vérifiée avec succès !', '/');
+		} else {
 			$this->setToastError('Lien de vérification invalide ou expiré.', '/user/login');
+		}
 	}
 
 	public function logout() {
@@ -333,14 +341,81 @@ class UserController extends Controller {
 			$existingUser = $userModel->getByEmail($email);
 			if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) $this->setToastError("Cette adresse email est déjà utilisée par un autre compte.", '/user/account');
 
-			// Update profile
-			if ($userModel->updateProfile($_SESSION['user_id'], $username, $email)) {
-				$_SESSION['user']['username'] = $username;
-				$_SESSION['user']['email'] = $email;
+			// Check if email has changed
+			$currentUser = $userModel->getById($_SESSION['user_id']);
+			$emailChanged = ($email !== $currentUser['email']);
 
-				$this->setToastSuccess("Votre profil a été mis à jour avec succès !", '/user/account');
+			if ($emailChanged) {
+				// Generate new verification token and mark user as unverified
+				$token = bin2hex(random_bytes(32));
+				if ($userModel->updateProfileWithEmailVerification($_SESSION['user_id'], $username, $email, $token)) {
+					// Send verification email
+					$link = "http://localhost:8080/user/verify/$token";
+					$subject = "Confirmez votre nouvelle adresse email - Camagru";
+
+					$message = "
+					<html>
+					<head>
+						<meta charset='UTF-8'>
+						<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+						<script src='https://cdn.tailwindcss.com'></script>
+						<link rel='preconnect' href='https://fonts.googleapis.com'>
+						<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+						<link href='https://fonts.googleapis.com/css2?family=Pacifico&display=swap' rel='stylesheet'>
+						<script>
+							tailwind.config = {
+								theme: {
+									extend: {
+										fontFamily: {
+											camagru: ['Pacifico', 'cursive'],
+										}
+									}
+								}
+							}
+						</script>
+					</head>
+					<body style='margin: 0; padding: 20px; background-color: #f9fafb; font-family: system-ui, sans-serif;'>
+						<div style='max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 32px;'>
+							<h1 style='font-family: Pacifico, cursive; font-size: 36px; text-align: center; color: #2563eb; margin: 0 0 16px 0;'>CAMAGRU</h1>
+							<h2 style='font-size: 24px; font-weight: 600; text-align: center; color: #111827; margin: 0 0 8px 0;'>Confirmez votre nouvelle adresse email</h2>
+							<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Bonjour <strong style='color: #111827;'>$username</strong>,</p>
+							<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Vous avez modifié votre adresse email sur Camagru. Pour des raisons de sécurité, vous devez confirmer cette nouvelle adresse.</p>
+							<div style='background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin: 24px 0;'>
+								<p style='margin: 0; color: #92400e; font-size: 14px; text-align: center;'><strong>Important :</strong> Votre compte sera temporairement restreint jusqu'à la confirmation de votre nouvelle adresse email.</p>
+							</div>
+							<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Pour confirmer votre nouvelle adresse email, cliquez sur le bouton ci-dessous :</p>
+							<div style='text-align: center; margin: 32px 0;'>
+								<a href='$link' style='display: inline-block; background-color: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background-color 0.2s;'>Confirmer ma nouvelle adresse email</a>
+							</div>
+							<p style='text-align: center; color: #9ca3af; font-size: 14px; margin: 24px 0 0 0;'>Si vous n'avez pas demandé ce changement, contactez-nous immédiatement.</p>
+						</div>
+					</body>
+					</html>
+					";
+
+					$headers  = "MIME-Version: 1.0\r\n";
+					$headers .= "Content-type: text/html; charset=UTF-8\r\n";
+					$headers .= "From: Camagru <noreply@camagru.local>\r\n";
+
+					if (mail($email, $subject, $message, $headers)) {
+						$_SESSION['user']['username'] = $username;
+						$_SESSION['user']['email'] = $email;
+						$_SESSION['user']['is_verified'] = 0; // Mark as unverified
+						$this->setToastSuccess("Votre profil a été mis à jour. Un email de confirmation a été envoyé à votre nouvelle adresse. Vous devez confirmer votre email pour continuer à utiliser votre compte.", '/user/confirm');
+					} else {
+						$this->setToastError("Erreur lors de l'envoi du mail de confirmation. Veuillez réessayer.", '/user/account');
+					}
+				} else {
+					$this->setToastError("Une erreur est survenue lors de la mise à jour du profil.", '/user/account');
+				}
 			} else {
-				$this->setToastError("Une erreur est survenue lors de la mise à jour du profil.", '/user/account');
+				// Only username changed, no email verification needed
+				if ($userModel->updateProfile($_SESSION['user_id'], $username, $email)) {
+					$_SESSION['user']['username'] = $username;
+					$this->setToastSuccess("Votre profil a été mis à jour avec succès !", '/user/account');
+				} else {
+					$this->setToastError("Une erreur est survenue lors de la mise à jour du profil.", '/user/account');
+				}
 			}
 		}
 	}
@@ -367,6 +442,74 @@ class UserController extends Controller {
 		$user = $userModel->getById($_SESSION['user_id']);
 		if (!$user) $this->setToastError("Utilisateur non trouvé", '/user/account');
 		require_once '../app/views/confirm.php';
+	}
+
+	public function resendVerification() {
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+			$this->requireAuth();
+
+			$userModel = $this->model('User');
+			$user = $userModel->getById($_SESSION['user_id']);
+			
+			if (!$user) $this->setToastError("Utilisateur non trouvé", '/');
+			if ($user['is_verified']) $this->setToastSuccess("Votre compte est déjà vérifié !", '/');
+
+			// Generate new verification token
+			$token = bin2hex(random_bytes(32));
+			if (!$userModel->updateVerificationToken($_SESSION['user_id'], $token)) {
+				$this->setToastError("Erreur lors de la génération du nouveau token.", '/user/confirm');
+			}
+
+			// Send verification email
+			$link = "http://localhost:8080/user/verify/$token";
+			$subject = "Confirmez votre adresse email - Camagru";
+
+			$message = "
+			<html>
+			<head>
+				<meta charset='UTF-8'>
+				<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+				<script src='https://cdn.tailwindcss.com'></script>
+				<link rel='preconnect' href='https://fonts.googleapis.com'>
+				<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+				<link href='https://fonts.googleapis.com/css2?family=Pacifico&display=swap' rel='stylesheet'>
+				<script>
+					tailwind.config = {
+						theme: {
+							extend: {
+								fontFamily: {
+									camagru: ['Pacifico', 'cursive'],
+								}
+							}
+						}
+					}
+				</script>
+			</head>
+			<body style='margin: 0; padding: 20px; background-color: #f9fafb; font-family: system-ui, sans-serif;'>
+				<div style='max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 32px;'>
+					<h1 style='font-family: Pacifico, cursive; font-size: 36px; text-align: center; color: #2563eb; margin: 0 0 16px 0;'>CAMAGRU</h1>
+					<h2 style='font-size: 24px; font-weight: 600; text-align: center; color: #111827; margin: 0 0 8px 0;'>Confirmez votre adresse email</h2>
+					<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Bonjour <strong style='color: #111827;'>{$user['username']}</strong>,</p>
+					<p style='text-align: center; color: #6b7280; margin: 0 0 24px 0;'>Pour confirmer votre adresse email et activer votre compte, cliquez sur le bouton ci-dessous :</p>
+					<div style='text-align: center; margin: 32px 0;'>
+						<a href='$link' style='display: inline-block; background-color: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background-color 0.2s;'>Confirmer mon adresse email</a>
+					</div>
+					<p style='text-align: center; color: #9ca3af; font-size: 14px; margin: 24px 0 0 0;'>Si vous n'avez pas demandé cette vérification, ignorez ce message.</p>
+				</div>
+			</body>
+			</html>
+			";
+
+			$headers  = "MIME-Version: 1.0\r\n";
+			$headers .= "Content-type: text/html; charset=UTF-8\r\n";
+			$headers .= "From: Camagru <noreply@camagru.local>\r\n";
+
+			if (mail($user['email'], $subject, $message, $headers)) {
+				$this->setToastSuccess("Un nouvel email de confirmation a été envoyé à votre adresse.", '/user/confirm');
+			} else {
+				$this->setToastError("Erreur lors de l'envoi du mail de confirmation.", '/user/confirm');
+			}
+		}
 	}
 
 	public function deleteAccount() {

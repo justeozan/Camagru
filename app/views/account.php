@@ -151,7 +151,7 @@
 	<div class="bg-white rounded-xl p-6 max-w-lg w-full">
 		<h3 class="text-lg font-semibold text-gray-900 mb-4">Modifier les informations du profil</h3>
 		
-		<form action="/user/updateProfile" method="POST">
+		<form action="/user/updateProfile" method="POST" onsubmit="return confirmEmailChange()">
 			<div class="space-y-4">
 				<div>
 					<label class="block text-sm font-medium text-gray-700 mb-2">Nom d'utilisateur</label>
@@ -160,7 +160,8 @@
 
 				<div>
 					<label class="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail</label>
-					<input type="email" name="email" value="<?= htmlspecialchars($_SESSION['user']['email'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent" required>
+					<input type="email" id="newEmail" name="email" value="<?= htmlspecialchars($_SESSION['user']['email'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent" required>
+					<input type="hidden" id="currentEmail" value="<?= htmlspecialchars($_SESSION['user']['email'] ?? '') ?>">
 				</div>
 			</div>
 			
@@ -290,6 +291,25 @@ function validateDeleteForm() {
 		return confirm('Êtes-vous absolument sûr de vouloir supprimer votre compte ? Cette action ne peut pas être annulée.');
 	}
 	return false;
+}
+
+function confirmEmailChange() {
+	const currentEmail = document.getElementById('currentEmail').value;
+	const newEmail = document.getElementById('newEmail').value;
+	
+	if (currentEmail !== newEmail) {
+		return confirm(
+			'⚠️ ATTENTION !\n\n' +
+			'Vous êtes sur le point de changer votre adresse email.\n\n' +
+			'Important :\n' +
+			'• Vous allez recevoir un email de confirmation à votre nouvelle adresse\n' +
+			'• Vous devrez cliquer sur le lien de confirmation pour valider le changement\n' +
+			'• Votre compte sera temporairement restreint jusqu\'à la confirmation\n' +
+			'• Vous serez automatiquement déconnecté après la confirmation\n\n' +
+			'Êtes-vous sûr de vouloir continuer ?'
+		);
+	}
+	return true;
 }
 
 // Close modal on escape key

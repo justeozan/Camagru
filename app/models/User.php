@@ -110,6 +110,18 @@ class User extends Model {
 		return $stmt->execute([$username, $email, $userId]);
 	}
 	
+	// Fonction pour mettre à jour le profil avec vérification email (quand l'email change)
+	public function updateProfileWithEmailVerification($userId, $username, $email, $token) {
+		$stmt = $this->db->prepare("UPDATE users SET username = ?, email = ?, is_verified = 0, verify_token = ? WHERE id = ?");
+		return $stmt->execute([$username, $email, $token, $userId]);
+	}
+	
+	// Fonction pour mettre à jour le token de vérification
+	public function updateVerificationToken($userId, $token) {
+		$stmt = $this->db->prepare("UPDATE users SET verify_token = ? WHERE id = ?");
+		return $stmt->execute([$token, $userId]);
+	}
+	
 	// Fonction pour mettre à jour les préférences d'un utilisateur
 	public function updatePreferences($userId, $notifyOnComment) {
 		$stmt = $this->db->prepare("UPDATE users SET notify_on_comment = ? WHERE id = ?");
