@@ -363,6 +363,22 @@ async function savePhoto(){
       body: form
     });
     
+    // Vérifier si la réponse est OK
+    if (!res.ok) {
+      if (res.status === 413)
+        throw new Error('La photo est trop volumineuse. Veuillez en choisir une plus petite.');
+      else
+        throw new Error(`Erreur serveur: ${res.status} ${res.statusText}`);
+    }
+    
+    // Vérifier si la réponse est du JSON
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await res.text();
+      console.error('Réponse non-JSON du serveur:', text);
+      throw new Error('Le serveur a renvoyé une réponse invalide (pas du JSON)');
+    }
+    
     const json = await res.json();
     
     // Rediriger vers la page spécifiée (avec le toast qui sera affiché)
@@ -374,7 +390,7 @@ async function savePhoto(){
     }
     
   } catch (error) {
-    showClientToast('Erreur de connexion', 'error');
+    showClientToast(`Erreur : ${error.message}`, 'error');
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
   }
