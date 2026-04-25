@@ -26,6 +26,12 @@ class User extends Model {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+	public function getByUsername($username) {
+		$stmt = $this->db->prepare("SELECT * FROM users WHERE username = ?");
+		$stmt->execute([$username]);
+		return $stmt->fetch(PDO::FETCH_ASSOC);
+	}
+
     // Fonction pour récupérer un utilisateur par son ID
     public function getById($id) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");

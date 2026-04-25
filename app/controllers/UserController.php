@@ -43,11 +43,19 @@ class UserController extends Controller {
 			$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 			$token = bin2hex(random_bytes(32)); // token sécurisé
 			$userModel = $this->model('User');
+			$existingUsername = $userModel->getByUsername($username);
 			$existing = $userModel->getByEmail($email);
 
+			if ($existingUsername) $this->setToastError("Ce nom d'utilisateur est déjà utilisé.", '/user/register');
 			if ($existing) $this->setToastError('Un compte existe déjà avec cette adresse email.', '/user/register');
 
-			$userModel->create($username, $email, $hashedPassword, $token);
+			try {
+				$userModel->create($username, $email, $hashedPassword, $token);
+			} catch (PDOException $e) {
+				if ((int)$e->errorInfo[1] === 1062)
+					$this->setToastError("Ce nom d'utilisateur ou cet email est déjà utilisé.", '/user/register');
+				throw $e;
+			}
 
 			// 🔥 Envoi du mail de vérification via mail()
 			$link = "http://localhost:8080/user/verify/$token";
@@ -336,13 +344,20 @@ class UserController extends Controller {
 			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $this->setToastError("L'adresse email est invalide.", '/user/account');
 
 			$userModel = $this->model('User');
+			$currentUser = $userModel->getById($_SESSION['user_id']);
+			$usernameChanged = ($username !== $currentUser['username']);
 			
+			if ($usernameChanged) {
+				$existingUsername = $userModel->getByUsername($username);
+				if ($existingUsername && (int)$existingUsername['id'] !== (int)$_SESSION['user_id'])
+					$this->setToastError("Ce nom d'utilisateur est déjà utilisé.", '/user/account');
+			}
+
 			// Check if email is already taken by another user
 			$existingUser = $userModel->getByEmail($email);
 			if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) $this->setToastError("Cette adresse email est déjà utilisée par un autre compte.", '/user/account');
 
 			// Check if email has changed
-			$currentUser = $userModel->getById($_SESSION['user_id']);
 			$emailChanged = ($email !== $currentUser['email']);
 
 			if ($emailChanged) {
