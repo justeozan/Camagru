@@ -15,6 +15,10 @@ RUN docker-php-ext-configure gd \
     --with-webp && \
     docker-php-ext-install pdo pdo_mysql gd
 
+# Rootless bind-mount fix: run PHP-FPM workers as root
+RUN sed -i 's/^user = .*/user = root/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/^group = .*/group = root/' /usr/local/etc/php-fpm.d/www.conf # même groupe
+
 # Configuration de msmtp comme sendmail
 COPY msmtprc /etc/msmtprc
 RUN echo "sendmail_path = /usr/bin/msmtp -t" > /usr/local/etc/php/conf.d/mail.ini

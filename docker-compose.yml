@@ -2,6 +2,7 @@ services:
   app:
     build: ./docker/php
     container_name: app
+    command: ["php-fpm", "-F", "-R"] # autorise workers root
     volumes:
       - .:/var/www/html
       - uploads_data:/var/www/html/uploads
@@ -16,8 +17,9 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./public:/var/www/html
+      - .:/var/www/html # projet complet monté
       - uploads_data:/var/www/html/uploads
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf # conf nginx principale
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
@@ -35,7 +37,7 @@ services:
       - mariadb_data:/var/lib/mysql
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-3307}:3306" # évite conflit 3306 hôte
 
   mailhog:
     image: mailhog/mailhog

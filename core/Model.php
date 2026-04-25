@@ -9,7 +9,7 @@ class Model {
             $host = $_ENV['DB_HOST'] ?? 'db';
             $dbname = $_ENV['DB_NAME'] ?? 'camagru';
             $user = $_ENV['DB_USER'] ?? 'root';
-            $pass = $_ENV['DB_PASSWORD'] ?? 'root';
+            $pass = $_ENV['DB_PASS'] ?? ($_ENV['DB_PASSWORD'] ?? 'root'); // compat des deux noms
 
             $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
             $this->db = new PDO($dsn, $user, $pass);
