@@ -46,7 +46,7 @@ up:
 	@$(DC) up
 
 down:
-	@$(DC) down
+	@$(DC) down --remove-orphans
 
 build:
 	@$(DC) build --no-cache
